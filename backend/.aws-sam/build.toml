@@ -7,6 +7,6 @@ architecture = "x86_64"
 handler = "getProjects.handler"
 manifest_hash = ""
 packagetype = "Zip"
-functions = ["GetProjectsFunction", "CreateProjectFunction", "UpdateProjectFunction", "DeleteProjectFunction"]
+functions = ["GetProjectsFunction", "GetProjectFunction", "CreateProjectFunction", "UpdateProjectFunction", "DeleteProjectFunction"]
 
 [layer_build_definitions]

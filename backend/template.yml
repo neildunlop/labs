@@ -68,6 +68,26 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref ProjectsTable
 
+  GetProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: getProject.handler
+      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ProjectsTable
+      Events:
+        GetProject:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ProjectsApi
+            Path: /projects/{id}
+            Method: GET
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+
   CreateProjectFunction:
     Type: AWS::Serverless::Function
     Properties:
