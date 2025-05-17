@@ -1243,3 +1243,62 @@ body {
 .landing-bg {
   background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%) !important;
 }
+
+/* Admin Project Form Tabs */
+.form-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--gray-500);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.tab-button:hover {
+  color: var(--primary-600);
+  background: var(--gray-100);
+}
+
+.tab-button.active {
+  color: var(--primary-700);
+  border-bottom: 2px solid var(--primary-600);
+  background: white;
+}
+
+/* Admin Project Form Array Input Group */
+.array-input-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.btn-small {
+  min-width: 120px;
+  text-align: center;
+}
+
+.btn-small.btn-danger {
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-title {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--primary-700);
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}

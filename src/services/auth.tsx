@@ -34,81 +34,29 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-interface CognitoUserSession {
-  getIdToken: () => {
-    payload: {
-      'cognito:groups'?: string[];
-      [key: string]: any;
-    };
-  };
-  getAccessToken: () => {
-    payload: {
-      'cognito:groups'?: string[];
-      [key: string]: any;
-    };
-  };
-}
-
-interface CognitoUserDetails {
-  username: string;
-  userId: string;
-  signInDetails?: {
-    loginId?: string;
-  };
-  signInUserSession?: CognitoUserSession;
-}
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element => {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
-    // Check for stored token and validate it
-    const token = localStorage.getItem('token');
-    if (token) {
-      validateToken(token);
-    }
-  }, []);
-
-  const validateToken = async (token: string) => {
-    try {
-      const response = await fetch('/api/auth/validate', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-      } else {
-        localStorage.removeItem('token');
+    const initAuth = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
         setUser(null);
       }
-    } catch (error) {
-      console.error('Error validating token:', error);
-      localStorage.removeItem('token');
-      setUser(null);
-    }
-  };
+    };
+
+    initAuth();
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const { token, user: userData } = await response.json();
-      localStorage.setItem('token', token);
-      setUser(userData);
+      const user = await signIn(email, password);
+      setUser(user);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -117,13 +65,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
-      await amplifySignOut();
-      localStorage.removeItem('token');
+      await signOut();
       setUser(null);
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still clear local state even if Amplify signOut fails
-      localStorage.removeItem('token');
       setUser(null);
     }
   };
@@ -193,37 +138,19 @@ export const confirmSignUp = async (username: string, code: string): Promise<voi
 export const signIn = async (username: string, password: string): Promise<AuthUser> => {
   try {
     checkConfig();
-    console.log('Attempting sign in with:', { username });
-    
-    const { isSignedIn, nextStep } = await amplifySignIn({
+    const { isSignedIn } = await amplifySignIn({
       username,
       password,
     });
 
-    console.log('Sign in response:', { isSignedIn, nextStep });
-
     if (isSignedIn) {
-      const cognitoUser = await amplifyGetCurrentUser() as CognitoUserDetails;
-      console.log('Current user:', cognitoUser);
-      
-      // Get the auth session
+      const cognitoUser = await amplifyGetCurrentUser();
       const session = await fetchAuthSession();
-      console.log('Auth session:', session);
-      
-      // Get the ID token
       const idToken = session.tokens?.idToken;
-      console.log('ID token:', idToken);
-      
-      // Get user attributes
-      const attributes = await fetchUserAttributes();
-      console.log('User attributes:', attributes);
-      
-      // Check if user is in the admin group
       const groups = idToken?.payload?.['cognito:groups'] as string[] || [];
       const isAdmin = groups.includes('admin');
-      console.log('Is admin?', isAdmin);
-      
-      const user: AuthUser = {
+
+      return {
         id: 0,
         username: cognitoUser.username,
         email: cognitoUser.signInDetails?.loginId || '',
@@ -231,8 +158,6 @@ export const signIn = async (username: string, password: string): Promise<AuthUs
         role: isAdmin ? 'admin' : 'user',
         is_active: true,
       };
-      console.log('Created user object:', user);
-      return user;
     }
     throw new Error('Sign in failed');
   } catch (error) {
@@ -254,24 +179,13 @@ export const signOut = async (): Promise<void> => {
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
   try {
     checkConfig();
-    const cognitoUser = await amplifyGetCurrentUser() as CognitoUserDetails;
+    const cognitoUser = await amplifyGetCurrentUser();
     if (!cognitoUser) {
       return null;
     }
 
-    // Get the auth session
     const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    
-    // Get the ID token
     const idToken = session.tokens?.idToken;
-    console.log('ID token:', idToken);
-    
-    // Get user attributes
-    const attributes = await fetchUserAttributes();
-    console.log('User attributes:', attributes);
-    
-    // Check if user is in the admin group
     const groups = idToken?.payload?.['cognito:groups'] as string[] || [];
     const isAdmin = groups.includes('admin');
 

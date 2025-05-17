@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../../types';
 import { mockUsers } from '../../data/mockUsers';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaEdit as FaEditIcon, FaTrash as FaTrashIcon } from 'react-icons/fa';
 
 export const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -46,14 +47,21 @@ export const AdminUsers: React.FC = () => {
 
       <div className="admin-table-container">
         <table className="admin-table">
+          <colgroup>
+            <col style={{ width: '28%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '14%' }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
-              <th>Department</th>
-              <th>Position</th>
               <th>Status</th>
+              <th>Created</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -62,22 +70,25 @@ export const AdminUsers: React.FC = () => {
               <tr key={user.id}>
                 <td>{user.name}</td>
                 <td>{user.email}</td>
-                <td>{user.role}</td>
-                <td>{user.metadata.department}</td>
-                <td>{user.metadata.position}</td>
+                <td><span className={`pill pill-role pill-role-${user.role.toLowerCase()}`}>{user.role}</span></td>
                 <td>{user.status}</td>
+                <td>{new Date(user.created_at).toLocaleDateString()}</td>
                 <td>
                   <button
-                    className="btn btn-small btn-secondary"
+                    className="btn btn-small btn-secondary icon-btn"
                     onClick={() => navigate(`/admin/users/${user.id}/edit`)}
+                    aria-label="Edit User"
+                    title="Edit User"
                   >
-                    Edit
+                    {FaEditIcon({})}
                   </button>
                   <button
-                    className="btn btn-small btn-danger"
+                    className="btn btn-small btn-danger icon-btn"
                     onClick={() => handleDelete(user.id)}
+                    aria-label="Delete User"
+                    title="Delete User"
                   >
-                    Delete
+                    {FaTrashIcon({})}
                   </button>
                 </td>
               </tr>

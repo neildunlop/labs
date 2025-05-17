@@ -73,9 +73,10 @@ const SuggestProject = () => {
     <div className="suggest-project-page">
       <section className="hero">
         <div className="container">
-          <h1 className="hero-title">Suggest a Project</h1>
-          <p className="hero-subtitle">
-            Share your innovative project idea with the Burendo Labs community.
+          <h1 className="page-title">Suggest a Project</h1>
+          <p className="hero-subtitle" style={{ fontSize: '1.25rem', color: 'var(--gray-700)', maxWidth: '900px', margin: '0 auto' }}>
+            Have an idea for something new? Share your innovative project proposal with the Burendo Labs community.<br /><br />
+            Whether it's a big challenge or a small experiment, we welcome all ideas—just fill out the form below to get started!
           </p>
         </div>
       </section>

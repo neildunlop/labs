@@ -3,6 +3,7 @@ import { Assignment, Project, User } from '../../types';
 import { mockAssignments, mockProjects } from '../../data/mockData';
 import { mockUsers } from '../../data/mockUsers';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaEdit as FaEditIcon, FaTrash as FaTrashIcon } from 'react-icons/fa';
 
 export const AdminAssignments: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -65,6 +66,15 @@ export const AdminAssignments: React.FC = () => {
 
       <div className="admin-table-container">
         <table className="admin-table">
+          <colgroup>
+            <col style={{ width: '28%' }} />
+            <col style={{ width: '16%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '8%' }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Project</th>
@@ -81,22 +91,26 @@ export const AdminAssignments: React.FC = () => {
               <tr key={assignment.id}>
                 <td>{getProjectTitle(assignment.project_id)}</td>
                 <td>{getUserName(assignment.user_id)}</td>
-                <td>{assignment.role}</td>
+                <td><span className={`pill pill-role pill-role-${assignment.role.toLowerCase()}`}>{assignment.role}</span></td>
                 <td>{assignment.status}</td>
                 <td>{new Date(assignment.start_date).toLocaleDateString()}</td>
                 <td>{assignment.end_date ? new Date(assignment.end_date).toLocaleDateString() : '-'}</td>
                 <td>
                   <button
-                    className="btn btn-small btn-secondary"
+                    className="btn btn-small btn-secondary icon-btn"
                     onClick={() => navigate(`/admin/assignments/${assignment.id}/edit`)}
+                    aria-label="Edit Assignment"
+                    title="Edit Assignment"
                   >
-                    Edit
+                    {FaEditIcon({})}
                   </button>
                   <button
-                    className="btn btn-small btn-danger"
+                    className="btn btn-small btn-danger icon-btn"
                     onClick={() => handleDelete(assignment.id)}
+                    aria-label="Delete Assignment"
+                    title="Delete Assignment"
                   >
-                    Delete
+                    {FaTrashIcon({})}
                   </button>
                 </td>
               </tr>

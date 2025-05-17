@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Project } from '../../types';
 import { mockProjects } from '../../data/mockProjects';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaEdit as FaEditIcon, FaTrash as FaTrashIcon } from 'react-icons/fa';
 
 export const AdminProjects: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -46,6 +47,15 @@ export const AdminProjects: React.FC = () => {
 
       <div className="admin-table-container">
         <table className="admin-table">
+          <colgroup>
+            <col style={{ width: '28%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '10%' }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Title</th>
@@ -61,23 +71,37 @@ export const AdminProjects: React.FC = () => {
             {projects.map((project) => (
               <tr key={project.id}>
                 <td>{project.title}</td>
-                <td>{project.metadata.type}</td>
-                <td>{project.status}</td>
-                <td>{project.metadata.difficulty}</td>
+                <td>
+                  <span className="tech-tag">
+                    {project.metadata.type.charAt(0).toUpperCase() + project.metadata.type.slice(1)}
+                  </span>
+                </td>
+                <td>
+                  <span className={`project-status status-${project.status}`}>
+                    {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                  </span>
+                </td>
+                <td>
+                  <span className={`pill pill-difficulty pill-difficulty-${project.metadata.difficulty.toLowerCase()}`}>{project.metadata.difficulty}</span>
+                </td>
                 <td>{new Date(project.created_at).toLocaleDateString()}</td>
                 <td>{new Date(project.updated_at).toLocaleDateString()}</td>
                 <td>
                   <button
-                    className="btn btn-small btn-secondary"
+                    className="btn btn-small btn-secondary icon-btn"
                     onClick={() => navigate(`/admin/projects/${project.id}/edit`)}
+                    aria-label="Edit Project"
+                    title="Edit Project"
                   >
-                    Edit
+                    {FaEditIcon({})}
                   </button>
                   <button
-                    className="btn btn-small btn-danger"
+                    className="btn btn-small btn-danger icon-btn"
                     onClick={() => handleDelete(project.id)}
+                    aria-label="Delete Project"
+                    title="Delete Project"
                   >
-                    Delete
+                    {FaTrashIcon({})}
                   </button>
                 </td>
               </tr>

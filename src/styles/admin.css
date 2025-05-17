@@ -123,8 +123,13 @@
 }
 
 .btn-small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.8rem;
+  min-width: 28px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-danger {
@@ -134,4 +139,74 @@
 
 .btn-danger:hover {
   background-color: var(--red-700);
+}
+
+/* Pill base style */
+.pill {
+  display: inline-block;
+  padding: 0.25em 0.75em;
+  border-radius: 999px;
+  font-size: 0.95em;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Difficulty pills for Projects */
+.pill-difficulty-easy {
+  background: #d1fae5;
+  color: #065f46;
+}
+.pill-difficulty-medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+.pill-difficulty-hard {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Role pills for Assignments and Users */
+.pill-role-developer {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.pill-role-manager {
+  background: #fef9c3;
+  color: #92400e;
+}
+.pill-role-tester {
+  background: #f3e8ff;
+  color: #6d28d9;
+}
+.pill-role-admin {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.pill-role-user {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.icon-btn {
+  margin-right: 0.25rem;
+  margin-left: 0.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  width: 28px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.icon-btn:last-child {
+  margin-right: 0;
+}
+
+.icon-btn:focus, .icon-btn:hover {
+  background: var(--gray-100);
 } 
