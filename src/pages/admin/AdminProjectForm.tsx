@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project, Deliverable, TechStack } from '../../types';
-import { mockProjects } from '../../data/mockProjects';
+import { getProjects, createProject, updateProject, getProject } from '../../api/projects';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface ProjectFormData {
@@ -45,7 +45,8 @@ const initialFormData: ProjectFormData = {
     backend: [''],
     database: [''],
     infrastructure: [''],
-    tools: ['']
+    tools: [''],
+    other: [''],
   },
   metadata: {
     type: 'website',
@@ -65,73 +66,105 @@ const initialFormData: ProjectFormData = {
   }
 };
 
+function mapFormDataToProject(formData: ProjectFormData): any {
+  // Map form data to backend Project type, filling in required fields
+  return {
+    ...formData,
+    description: formData.overview, // Use overview as description for now
+    tags: formData.metadata.tags || [],
+    team: [], // You can add a team field in the UI if needed
+    timeline: formData.metadata.estimatedTime || '',
+    technologies: [
+      ...(formData.techStack.frontend || []),
+      ...(formData.techStack.backend || []),
+      ...(formData.techStack.database || []),
+      ...(formData.techStack.infrastructure || []),
+      ...(formData.techStack.tools || []),
+      ...(formData.techStack.other || [])
+    ],
+    createdAt: undefined,
+    updatedAt: undefined,
+  };
+}
+
+function isValidMetadata(meta: any): meta is ProjectFormData['metadata'] {
+  return (
+    meta &&
+    typeof meta === 'object' &&
+    typeof meta.type === 'string' &&
+    typeof meta.estimatedTime === 'string' &&
+    typeof meta.teamSize === 'object' &&
+    typeof meta.difficulty === 'string' &&
+    Array.isArray(meta.tags)
+  );
+}
+
+function mapApiProjectToFormData(project: any): ProjectFormData {
+  return {
+    title: project.title || '',
+    overview: project.overview || project.description || '',
+    status: project.status || 'draft',
+    objectives: Array.isArray(project.objectives) ? project.objectives : [],
+    deliverables: Array.isArray(project.deliverables)
+      ? project.deliverables.map((d: any, idx: number) => ({
+          id: d.id ?? idx + 1,
+          title: d.title ?? '',
+          description: d.description ?? '',
+          type: d.type ?? 'code',
+          requirements: d.requirements ?? []
+        }))
+      : [],
+    considerations: Array.isArray(project.considerations) ? project.considerations : [],
+    techStack: project.techStack || {
+      frontend: [], backend: [], database: [], infrastructure: [], tools: [], other: []
+    },
+    metadata: isValidMetadata(project.metadata)
+      ? project.metadata
+      : initialFormData.metadata,
+    sections: project.sections || {},
+  };
+}
+
 export const AdminProjectForm: React.FC = () => {
   const [formData, setFormData] = useState<ProjectFormData>(initialFormData);
   const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'tech' | 'sections'>('basic');
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  useEffect(() => {
-    if (id && projects.length > 0) {
-      const project = projects.find(p => p.id === parseInt(id));
-      if (project) {
-        setFormData({
-          title: project.title,
-          overview: project.overview,
-          status: project.status,
-          objectives: project.objectives,
-          deliverables: project.deliverables,
-          considerations: project.considerations,
-          techStack: project.techStack,
-          metadata: project.metadata,
-          sections: project.sections
-        });
-      }
+    if (id) {
+      // Fetch the project from the API for editing
+      (async () => {
+        try {
+          const project = await getProject(id);
+          setFormData(mapApiProjectToFormData(project));
+        } catch (error) {
+          setError('Failed to load project for editing');
+        }
+      })();
     }
-  }, [id, projects]);
-
-  const fetchProjects = async () => {
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setProjects(mockProjects);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    }
-  };
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      const mapped = mapFormDataToProject(formData);
       if (id) {
         // Update existing project
-        setProjects(projects.map(project => 
-          project.id === parseInt(id)
-            ? { ...project, ...formData, updated_at: new Date().toISOString() }
-            : project
-        ));
+        await updateProject(id, mapped);
       } else {
         // Create new project
-        const newProject: Project = {
-          id: Math.max(...projects.map(p => p.id)) + 1,
-          ...formData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setProjects([...projects, newProject]);
+        await createProject(mapped);
       }
-      
       navigate('/admin/projects');
-    } catch (error) {
-      console.error('Error saving project:', error);
+    } catch (error: any) {
+      setError(error.message || 'Error saving project');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -460,6 +493,9 @@ export const AdminProjectForm: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {loading && <div className="admin-loading">Saving project...</div>}
+      {error && <div className="admin-error">{error}</div>}
     </div>
   );
 };

@@ -53,7 +53,10 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: getProjects.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ProjectsTable
       Events:
         GetProjects:
           Type: Api
@@ -70,7 +73,10 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: createProject.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ProjectsTable
       Events:
         CreateProject:
           Type: Api
@@ -78,6 +84,46 @@ Resources:
             RestApiId: !Ref ProjectsApi
             Path: /projects
             Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+
+  UpdateProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: updateProject.handler
+      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ProjectsTable
+      Events:
+        UpdateProject:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ProjectsApi
+            Path: /projects/{id}
+            Method: PUT
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+
+  DeleteProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: deleteProject.handler
+      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ProjectsTable
+      Events:
+        DeleteProject:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ProjectsApi
+            Path: /projects/{id}
+            Method: DELETE
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ProjectsTable
