@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { signUp, confirmSignUp, signIn, AuthUser } from '../services/auth';
+import { signUp, confirmSignUp, signIn, resendConfirmationCode } from '../services/auth';
+import { AuthUser } from '../services/types';
 
 interface AuthProps {
   onAuth: (user: AuthUser) => void;
@@ -13,6 +14,21 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [code, setCode] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [error, setError] = useState('');
+  const [isResending, setIsResending] = useState(false);
+
+  const handleResendCode = async () => {
+    try {
+      setIsResending(true);
+      setError('');
+      await resendConfirmationCode(username);
+      setError('A new confirmation code has been sent to your email');
+    } catch (err) {
+      console.error('Error resending code:', err);
+      setError(err instanceof Error ? err.message : 'Failed to resend confirmation code');
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +49,20 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
         onAuth(user);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error('Sign in error:', err);
+      if (err instanceof Error) {
+        if (err.message.includes('Incorrect username or password')) {
+          setError('Invalid username or password');
+        } else if (err.message.includes('User is not confirmed')) {
+          setError('Please confirm your account first');
+        } else if (err.message.includes('Invalid verification code')) {
+          setError('Invalid confirmation code. Please check the code and try again.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('An error occurred during sign in');
+      }
     }
   };
 
@@ -52,26 +81,41 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
               </div>
             )}
 
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="form-input"
-                required
-              />
-            </div>
-
-            {isSignUp && !showConfirmation && (
+            {isSignUp ? (
+              // Sign Up fields
+              <>
+                <div className="form-group">
+                  <label htmlFor="username">Username</label>
+                  <input
+                    type="text"
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
+              </>
+            ) : (
+              // Sign In fields
               <div className="form-group">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="username">Username</label>
                 <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="form-input"
                   required
                 />
@@ -90,18 +134,30 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
               />
             </div>
 
-            {showConfirmation && (
-              <div className="form-group">
-                <label htmlFor="code">Confirmation Code</label>
-                <input
-                  type="text"
-                  id="code"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  className="form-input"
-                  required
-                />
-              </div>
+            {isSignUp && showConfirmation && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="code">Confirmation Code</label>
+                  <input
+                    type="text"
+                    id="code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={isResending}
+                    className="btn btn-secondary"
+                  >
+                    {isResending ? 'Sending...' : 'Resend Code'}
+                  </button>
+                </div>
+              </>
             )}
 
             <div className="form-actions">
@@ -114,6 +170,11 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                   setIsSignUp(!isSignUp);
                   setShowConfirmation(false);
                   setError('');
+                  // Clear fields when switching modes
+                  setUsername('');
+                  setEmail('');
+                  setPassword('');
+                  setCode('');
                 }}
                 className="btn btn-secondary"
               >

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { AuthUser } from '../services/auth';
+import { AuthUser } from '../services/types';
 
 interface NavbarProps {
   user: AuthUser | null;
@@ -40,6 +40,14 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onSignOut }) => {
                 >
                   Suggest Project
                 </Link>
+                {user.role === 'admin' && (
+                  <Link
+                    to="/admin/users"
+                    className="navbar-link"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <div className="navbar-user">
                   <span className="user-email">{user.email}</span>
                   <button

@@ -9,12 +9,120 @@ import {
   confirmResetPassword as amplifyForgotPasswordSubmit,
 } from '@aws-amplify/auth';
 import { CognitoUser } from 'amazon-cognito-identity-js';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { AuthUser } from './types';
+import { Amplify } from 'aws-amplify';
 
-export interface AuthUser {
-  username: string;
-  email: string;
-  sub: string;
+// Initialize Amplify
+const amplifyConfig = {
+  Auth: {
+    Cognito: {
+      userPoolId: import.meta.env.VITE_USER_POOL_ID,
+      userPoolClientId: import.meta.env.VITE_CLIENT_ID,
+    },
+  },
+};
+
+Amplify.configure(amplifyConfig);
+
+interface AuthContextType {
+  user: AuthUser | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  isAuthenticated: boolean;
 }
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    // Check for stored token and validate it
+    const token = localStorage.getItem('token');
+    if (token) {
+      validateToken(token);
+    }
+  }, []);
+
+  const validateToken = async (token: string) => {
+    try {
+      const response = await fetch('/api/auth/validate', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      } else {
+        localStorage.removeItem('token');
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error validating token:', error);
+      localStorage.removeItem('token');
+      setUser(null);
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+
+      const { token, user: userData } = await response.json();
+      localStorage.setItem('token', token);
+      setUser(userData);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await amplifySignOut();
+      localStorage.removeItem('token');
+      setUser(null);
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Still clear local state even if Amplify signOut fails
+      localStorage.removeItem('token');
+      setUser(null);
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        isAuthenticated: !!user,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 const checkConfig = () => {
   const userPoolId = import.meta.env.VITE_USER_POOL_ID;
@@ -59,17 +167,26 @@ export const confirmSignUp = async (username: string, code: string): Promise<voi
 export const signIn = async (username: string, password: string): Promise<AuthUser> => {
   try {
     checkConfig();
+    console.log('Attempting sign in with:', { username });
+    
     const { isSignedIn, nextStep } = await amplifySignIn({
       username,
       password,
     });
 
+    console.log('Sign in response:', { isSignedIn, nextStep });
+
     if (isSignedIn) {
       const user = await amplifyGetCurrentUser();
+      console.log('Current user:', user);
+      
       return {
+        id: 0,
         username: user.username,
         email: user.signInDetails?.loginId || '',
         sub: user.userId,
+        role: 'user',
+        is_active: true,
       };
     }
     throw new Error('Sign in failed');
@@ -97,11 +214,17 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
       return null;
     }
     return {
+      id: 0,
       username: user.username,
       email: user.signInDetails?.loginId || '',
       sub: user.userId,
+      role: 'user',
+      is_active: true,
     };
   } catch (error) {
+    if (error instanceof Error && error.message.includes('User needs to be authenticated')) {
+      return null;
+    }
     console.error('Error getting current user:', error);
     throw error;
   }
