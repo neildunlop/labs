@@ -1,8 +1,0 @@
-Outputs:
-  UserPoolId:
-    Description: Cognito User Pool ID
-    Value: !Ref UserPool
-
-  UserPoolClientId:
-    Description: Cognito User Pool Client ID
-    Value: !Ref UserPoolClient 

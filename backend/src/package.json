@@ -10,8 +10,8 @@
     "start:local": "sam local start-api"
   },
   "dependencies": {
-    "uuid": "^9.0.1",
-    "@aws-sdk/client-dynamodb": "^3.540.0"
+    "@aws-sdk/client-dynamodb": "^3.540.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.126",
@@ -21,4 +21,4 @@
     "ts-jest": "^29.1.1",
     "typescript": "^5.2.2"
   }
-} 
+}
