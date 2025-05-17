@@ -6,6 +6,8 @@ import { AuthUser } from './services/types';
 import { getCurrentUser, useAuth, AuthProvider } from './services/auth';
 import { AdminLayout } from './components/AdminLayout';
 import { AdminUsers } from './pages/admin/Users';
+import { AdminProjects } from './pages/admin/Projects';
+import { AdminAssignments } from './pages/admin/Assignments';
 import Home from './pages/Home';
 import About from './pages/About';
 import Projects from './pages/Projects';
@@ -78,13 +80,24 @@ function AppContent() {
           {/* Admin Routes */}
           <Route
             path="/admin"
-            element={<AdminLayout />}
+            element={<AdminLayout user={user!} />}
           >
+            <Route
+              index
+              element={<Navigate to="users" replace />}
+            />
             <Route
               path="users"
               element={<AdminUsers />}
             />
-            {/* Add more admin routes here */}
+            <Route
+              path="projects"
+              element={<AdminProjects />}
+            />
+            <Route
+              path="assignments"
+              element={<AdminAssignments />}
+            />
           </Route>
         </Routes>
       </main>

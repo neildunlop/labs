@@ -8,6 +8,11 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ user, onSignOut }) => {
+  // Add debug logging
+  console.log('Navbar - Current user:', user);
+  console.log('Navbar - User role:', user?.role);
+  console.log('Navbar - Is admin?', user?.role === 'admin');
+
   return (
     <nav className="navbar">
       <div className="container">
@@ -40,9 +45,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onSignOut }) => {
                 >
                   Suggest Project
                 </Link>
+                {/* Add debug info in the UI temporarily */}
+                <div style={{ color: 'white', marginRight: '10px' }}>
+                  Role: {user.role || 'none'}
+                </div>
                 {user.role === 'admin' && (
                   <Link
-                    to="/admin/users"
+                    to="/admin"
                     className="navbar-link"
                   >
                     Admin

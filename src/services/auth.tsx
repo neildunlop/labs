@@ -7,6 +7,8 @@ import {
   resendSignUpCode as amplifyResendSignUp,
   resetPassword as amplifyForgotPassword,
   confirmResetPassword as amplifyForgotPasswordSubmit,
+  fetchUserAttributes,
+  fetchAuthSession,
 } from '@aws-amplify/auth';
 import { CognitoUser } from 'amazon-cognito-identity-js';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -30,6 +32,30 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+}
+
+interface CognitoUserSession {
+  getIdToken: () => {
+    payload: {
+      'cognito:groups'?: string[];
+      [key: string]: any;
+    };
+  };
+  getAccessToken: () => {
+    payload: {
+      'cognito:groups'?: string[];
+      [key: string]: any;
+    };
+  };
+}
+
+interface CognitoUserDetails {
+  username: string;
+  userId: string;
+  signInDetails?: {
+    loginId?: string;
+  };
+  signInUserSession?: CognitoUserSession;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -177,17 +203,36 @@ export const signIn = async (username: string, password: string): Promise<AuthUs
     console.log('Sign in response:', { isSignedIn, nextStep });
 
     if (isSignedIn) {
-      const user = await amplifyGetCurrentUser();
-      console.log('Current user:', user);
+      const cognitoUser = await amplifyGetCurrentUser() as CognitoUserDetails;
+      console.log('Current user:', cognitoUser);
       
-      return {
+      // Get the auth session
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      
+      // Get the ID token
+      const idToken = session.tokens?.idToken;
+      console.log('ID token:', idToken);
+      
+      // Get user attributes
+      const attributes = await fetchUserAttributes();
+      console.log('User attributes:', attributes);
+      
+      // Check if user is in the admin group
+      const groups = idToken?.payload?.['cognito:groups'] as string[] || [];
+      const isAdmin = groups.includes('admin');
+      console.log('Is admin?', isAdmin);
+      
+      const user: AuthUser = {
         id: 0,
-        username: user.username,
-        email: user.signInDetails?.loginId || '',
-        sub: user.userId,
-        role: 'user',
+        username: cognitoUser.username,
+        email: cognitoUser.signInDetails?.loginId || '',
+        sub: cognitoUser.userId,
+        role: isAdmin ? 'admin' : 'user',
         is_active: true,
       };
+      console.log('Created user object:', user);
+      return user;
     }
     throw new Error('Sign in failed');
   } catch (error) {
@@ -209,16 +254,33 @@ export const signOut = async (): Promise<void> => {
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
   try {
     checkConfig();
-    const user = await amplifyGetCurrentUser();
-    if (!user) {
+    const cognitoUser = await amplifyGetCurrentUser() as CognitoUserDetails;
+    if (!cognitoUser) {
       return null;
     }
+
+    // Get the auth session
+    const session = await fetchAuthSession();
+    console.log('Auth session:', session);
+    
+    // Get the ID token
+    const idToken = session.tokens?.idToken;
+    console.log('ID token:', idToken);
+    
+    // Get user attributes
+    const attributes = await fetchUserAttributes();
+    console.log('User attributes:', attributes);
+    
+    // Check if user is in the admin group
+    const groups = idToken?.payload?.['cognito:groups'] as string[] || [];
+    const isAdmin = groups.includes('admin');
+
     return {
       id: 0,
-      username: user.username,
-      email: user.signInDetails?.loginId || '',
-      sub: user.userId,
-      role: 'user',
+      username: cognitoUser.username,
+      email: cognitoUser.signInDetails?.loginId || '',
+      sub: cognitoUser.userId,
+      role: isAdmin ? 'admin' : 'user',
       is_active: true,
     };
   } catch (error) {

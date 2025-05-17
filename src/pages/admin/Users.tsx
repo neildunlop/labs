@@ -8,6 +8,26 @@ interface UserFormData {
   is_active: boolean;
 }
 
+// Mock data for development
+const mockUsers: AuthUser[] = [
+  {
+    id: 1,
+    username: 'admin',
+    email: 'admin@example.com',
+    sub: '123',
+    role: 'admin',
+    is_active: true,
+  },
+  {
+    id: 2,
+    username: 'user',
+    email: 'user@example.com',
+    sub: '456',
+    role: 'user',
+    is_active: true,
+  },
+];
+
 export const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
@@ -24,15 +44,9 @@ export const AdminUsers: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      }
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setUsers(mockUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
     }
@@ -41,24 +55,30 @@ export const AdminUsers: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = selectedUser
-        ? `/api/admin/users/${selectedUser.id}`
-        : '/api/admin/users';
-      const method = selectedUser ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        fetchUsers();
-        resetForm();
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (selectedUser) {
+        // Update existing user
+        setUsers(users.map(user => 
+          user.id === selectedUser.id 
+            ? { ...user, ...formData }
+            : user
+        ));
+      } else {
+        // Create new user
+        const newUser: AuthUser = {
+          id: Math.max(...users.map(u => u.id)) + 1,
+          username: formData.email.split('@')[0],
+          email: formData.email,
+          sub: Math.random().toString(36).substring(7),
+          role: formData.role,
+          is_active: formData.is_active,
+        };
+        setUsers([...users, newUser]);
       }
+      
+      resetForm();
     } catch (error) {
       console.error('Error saving user:', error);
     }
@@ -70,16 +90,9 @@ export const AdminUsers: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (response.ok) {
-        fetchUsers();
-      }
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setUsers(users.filter(user => user.id !== userId));
     } catch (error) {
       console.error('Error deleting user:', error);
     }

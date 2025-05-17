@@ -1,9 +1,12 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../services/auth';
+import { AuthUser } from '../services/types';
 
-export const AdminLayout: React.FC = () => {
-  const { user } = useAuth();
+interface AdminLayoutProps {
+  user: AuthUser;
+}
+
+export const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
   const navigate = useNavigate();
 
   // Redirect if not admin

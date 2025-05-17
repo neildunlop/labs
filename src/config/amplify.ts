@@ -5,6 +5,11 @@ const amplifyConfig = {
     Cognito: {
       userPoolId: import.meta.env.VITE_USER_POOL_ID,
       userPoolClientId: import.meta.env.VITE_CLIENT_ID,
+      tokenProvider: {
+        oauth: {
+          scope: ['email', 'openid', 'profile', 'aws.cognito.signin.user.admin'],
+        },
+      },
     },
   },
   API: {
