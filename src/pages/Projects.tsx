@@ -81,7 +81,7 @@ const Projects = () => {
                 <option value="active">Active</option>
               </select>
             </div>
-            <Link to="/suggest" className="btn btn-primary">Suggest Project</Link>
+            <Link to="/suggest-project" className="btn btn-primary">Suggest Project</Link>
           </div>
 
           <div className="project-grid">

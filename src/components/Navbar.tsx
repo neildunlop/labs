@@ -1,31 +1,66 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { AuthUser } from '../services/auth';
 
-const Navbar = () => {
+interface NavbarProps {
+  user: AuthUser | null;
+  onSignOut: () => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ user, onSignOut }) => {
   return (
     <nav className="navbar">
-      <div className="navbar-container container">
-        <Link to="/" className="logo">
-          <img 
-            src="/burendo_logo.png" 
-            alt="Burendo Labs" 
-            className="logo-image"
-          />
-          <span className="logo-text">Burendo Labs</span>
-        </Link>
-        
-        <div className="nav-links">
-          <Link to="/" className="nav-link">Home</Link>
-          <Link to="/about" className="nav-link">About</Link>
-          <Link to="/projects" className="nav-link">Projects</Link>
-          <Link to="/suggest" className="nav-link">Suggest Project</Link>
-        </div>
+      <div className="container">
+        <div className="navbar-content">
+          <div className="navbar-brand">
+            <Link to="/" className="navbar-logo">
+              <img
+                src="/burendo_logo.png"
+                alt="Burendo Labs"
+                className="logo-image"
+              />
+              <span className="logo-text">
+                Burendo Labs
+              </span>
+            </Link>
+          </div>
 
-        <div className="nav-actions">
-          <Link to="/signup" className="btn btn-primary">Sign Up</Link>
+          <div className="navbar-menu">
+            {user ? (
+              <>
+                <Link
+                  to="/projects"
+                  className="navbar-link"
+                >
+                  Projects
+                </Link>
+                <Link
+                  to="/suggest-project"
+                  className="navbar-link"
+                >
+                  Suggest Project
+                </Link>
+                <div className="navbar-user">
+                  <span className="user-email">{user.email}</span>
+                  <button
+                    onClick={onSignOut}
+                    className="btn btn-link"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </>
+            ) : (
+              <Link
+                to="/"
+                className="navbar-link"
+              >
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </nav>
   );
-};
-
-export default Navbar; 
+}; 
