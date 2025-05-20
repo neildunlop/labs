@@ -18,7 +18,7 @@ function mapApiProjectToFrontend(project: any): Project {
   const meta = project.metadata || {};
   // Only include type/difficulty if they exist, otherwise fallback to empty string/default
   return {
-    id: typeof project.id === 'string' ? parseInt(project.id, 10) : project.id,
+    id: project.id,
     title: project.title || '',
     overview: project.overview || '',
     status: project.status || 'draft',

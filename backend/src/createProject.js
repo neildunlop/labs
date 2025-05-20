@@ -1,8 +1,8 @@
 const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
 const { marshall } = require('@aws-sdk/util-dynamodb');
 const client = new DynamoDBClient();
-//const { v4: uuidv4 } = require('uuid');
-const {"v4": uuidv4} = require('uuid');
+const { v4: uuidv4 } = require('uuid');
+
 
 function isValidProject(project) {
   // Basic validation for required fields and types

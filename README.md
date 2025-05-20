@@ -124,6 +124,32 @@ burendo-labs/
 - `ALGORITHM` - JWT algorithm (default: HS256)
 - `ACCESS_TOKEN_EXPIRE_MINUTES` - JWT token expiration time
 
+## Backend (AWS SAM)
+
+- The backend is managed using AWS SAM (Serverless Application Model).
+- The main SAM template file is located at: `burendo-labs/backend/template.yml`.
+- All Lambda functions use the Node.js 20.x runtime (`nodejs20.x`).
+
+### How to Build and Deploy the Backend
+
+1. Open a terminal and navigate to the backend directory:
+   ```sh
+   cd burendo-labs/backend
+   ```
+2. To build the SAM application (packages dependencies, prepares for deployment):
+   ```sh
+   sam build --template-file template.yml
+   ```
+3. To deploy the stack to AWS:
+   ```sh
+   sam deploy --guided --template-file template.yml
+   ```
+   (The first time, answer the prompts to set stack name, region, etc. These will be saved for future deploys.)
+
+**Note:**
+- Always use `template.yml` as the template file for build and deploy commands.
+- The backend Lambda functions are written for Node.js 20.x (nodejs20.x runtime).
+
 ## Contributing
 
 1. Create a new branch for your feature
