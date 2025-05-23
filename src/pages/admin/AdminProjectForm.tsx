@@ -213,7 +213,7 @@ export const AdminProjectForm: React.FC = () => {
             className={`tab-button ${activeTab === 'details' ? 'active' : ''}`}
             onClick={() => setActiveTab('details')}
           >
-            Project Details
+            Details
           </button>
           <button
             type="button"
@@ -233,35 +233,36 @@ export const AdminProjectForm: React.FC = () => {
 
         <div className="tab-content">
           {activeTab === 'basic' && (
-            <>
+            <div className="form-section">
               <div className="form-group">
                 <label htmlFor="title">Title</label>
                 <input
                   type="text"
                   id="title"
+                  name="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
                 />
               </div>
-
               <div className="form-group">
                 <label htmlFor="overview">Overview</label>
                 <textarea
                   id="overview"
+                  name="overview"
                   value={formData.overview}
                   onChange={(e) => setFormData({ ...formData, overview: e.target.value })}
                   required
-                  rows={4}
                 />
               </div>
-
               <div className="form-group">
                 <label htmlFor="status">Status</label>
                 <select
                   id="status"
+                  name="status"
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as Project['status'] })}
+                  required
                 >
                   <option value="draft">Draft</option>
                   <option value="active">Active</option>
@@ -269,157 +270,102 @@ export const AdminProjectForm: React.FC = () => {
                   <option value="archived">Archived</option>
                 </select>
               </div>
+            </div>
+          )}
 
+          {activeTab === 'details' && (
+            <div className="form-section">
               <div className="form-group">
-                <label>Type</label>
+                <label htmlFor="type">Type</label>
                 <select
+                  id="type"
+                  name="type"
                   value={formData.metadata.type}
                   onChange={(e) => setFormData({
                     ...formData,
                     metadata: { ...formData.metadata, type: e.target.value as 'website' | 'ai' }
                   })}
+                  required
                 >
                   <option value="website">Website</option>
                   <option value="ai">AI</option>
                 </select>
               </div>
-
               <div className="form-group">
-                <label>Difficulty</label>
+                <label htmlFor="difficulty">Difficulty</label>
                 <select
+                  id="difficulty"
+                  name="difficulty"
                   value={formData.metadata.difficulty}
                   onChange={(e) => setFormData({
                     ...formData,
                     metadata: { ...formData.metadata, difficulty: e.target.value as 'beginner' | 'intermediate' | 'advanced' }
                   })}
+                  required
                 >
                   <option value="beginner">Beginner</option>
                   <option value="intermediate">Intermediate</option>
                   <option value="advanced">Advanced</option>
                 </select>
               </div>
-            </>
-          )}
-
-          {activeTab === 'details' && (
-            <>
               <div className="form-group">
-                <label>Objectives</label>
-                {formData.objectives.map((objective: string, index: number) => (
-                  <div key={index} className="array-input-group">
-                    <input
-                      type="text"
-                      value={objective}
-                      onChange={(e) => handleArrayInput(formData.objectives, index, e.target.value, 
-                        (newArray) => setFormData({ ...formData, objectives: newArray }))}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-small btn-danger"
-                      onClick={() => removeArrayItem(formData.objectives, index,
-                        (newArray) => setFormData({ ...formData, objectives: newArray }))}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="btn btn-small btn-secondary"
-                  onClick={() => addArrayItem(formData.objectives,
-                    (newArray) => setFormData({ ...formData, objectives: newArray }))}
-                >
-                  Add Objective
-                </button>
+                <label htmlFor="estimatedTime">Estimated Time</label>
+                <input
+                  type="text"
+                  id="estimatedTime"
+                  name="estimatedTime"
+                  value={formData.metadata.estimatedTime}
+                  onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, estimatedTime: e.target.value } })}
+                  required
+                />
               </div>
-
               <div className="form-group">
-                <label>Considerations</label>
-                {formData.considerations.map((consideration, index) => (
-                  <div key={index} className="array-input-group">
-                    <input
-                      type="text"
-                      value={consideration}
-                      onChange={(e) => handleArrayInput(formData.considerations, index, e.target.value,
-                        (newArray) => setFormData({ ...formData, considerations: newArray }))}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-small btn-danger"
-                      onClick={() => removeArrayItem(formData.considerations, index,
-                        (newArray) => setFormData({ ...formData, considerations: newArray }))}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="btn btn-small btn-secondary"
-                  onClick={() => addArrayItem(formData.considerations,
-                    (newArray) => setFormData({ ...formData, considerations: newArray }))}
-                >
-                  Add Consideration
-                </button>
-              </div>
-
-              <div className="form-group">
-                <label>Tags</label>
-                {formData.metadata.tags.map((tag, index) => (
-                  <div key={index} className="array-input-group">
-                    <input
-                      type="text"
-                      value={tag}
-                      onChange={(e) => handleArrayInput(formData.metadata.tags, index, e.target.value,
-                        (newArray) => setFormData({
-                          ...formData,
-                          metadata: { ...formData.metadata, tags: newArray }
-                        }))}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-small btn-danger"
-                      onClick={() => removeArrayItem(formData.metadata.tags, index,
-                        (newArray) => setFormData({
-                          ...formData,
-                          metadata: { ...formData.metadata, tags: newArray }
-                        }))}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="btn btn-small btn-secondary"
-                  onClick={() => addArrayItem(formData.metadata.tags,
-                    (newArray) => setFormData({
+                <label>Team Size</label>
+                <div className="form-row">
+                  <input
+                    type="number"
+                    name="teamSize.min"
+                    value={formData.metadata.teamSize.min}
+                    onChange={(e) => setFormData({
                       ...formData,
-                      metadata: { ...formData.metadata, tags: newArray }
-                    }))}
-                >
-                  Add Tag
-                </button>
+                      metadata: { ...formData.metadata, teamSize: { ...formData.metadata.teamSize, min: Number(e.target.value) } }
+                    })}
+                    min="1"
+                    required
+                  />
+                  <span>to</span>
+                  <input
+                    type="number"
+                    name="teamSize.max"
+                    value={formData.metadata.teamSize.max}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      metadata: { ...formData.metadata, teamSize: { ...formData.metadata.teamSize, max: Number(e.target.value) } }
+                    })}
+                    min="1"
+                    required
+                  />
+                </div>
               </div>
-            </>
+            </div>
           )}
 
           {activeTab === 'tech' && (
-            <>
-              {Object.entries(formData.techStack).map(([category, items]) => (
-                <div key={category} className="form-group">
-                  <label>{category.charAt(0).toUpperCase() + category.slice(1)}</label>
-                  {items.map((item: string, index: number) => (
-                    <div key={index} className="array-input-group">
+            <div className="form-section">
+              <div className="form-group">
+                <label>Frontend Technologies</label>
+                <div className="array-input-group">
+                  {(formData.techStack.frontend || []).map((tech, index) => (
+                    <div key={index} className="form-row">
                       <input
                         type="text"
-                        value={item}
+                        value={tech}
                         onChange={(e) => {
-                          const newItems = [...items];
+                          const newItems = [...(formData.techStack.frontend || [])];
                           newItems[index] = e.target.value;
                           setFormData({
                             ...formData,
-                            techStack: { ...formData.techStack, [category]: newItems }
+                            techStack: { ...formData.techStack, frontend: newItems }
                           });
                         }}
                       />
@@ -427,10 +373,10 @@ export const AdminProjectForm: React.FC = () => {
                         type="button"
                         className="btn btn-small btn-danger"
                         onClick={() => {
-                          const newItems = items.filter((_: string, i: number) => i !== index);
+                          const newItems = (formData.techStack.frontend || []).filter((_: string, i: number) => i !== index);
                           setFormData({
                             ...formData,
-                            techStack: { ...formData.techStack, [category]: newItems }
+                            techStack: { ...formData.techStack, frontend: newItems }
                           });
                         }}
                       >
@@ -440,43 +386,84 @@ export const AdminProjectForm: React.FC = () => {
                   ))}
                   <button
                     type="button"
-                    className="btn btn-small btn-secondary"
-                    onClick={() => {
-                      setFormData({
-                        ...formData,
-                        techStack: {
-                          ...formData.techStack,
-                          [category]: [...items, '']
-                        }
-                      });
-                    }}
+                    className="btn btn-small"
+                    onClick={() => setFormData({
+                      ...formData,
+                      techStack: { ...formData.techStack, frontend: [...(formData.techStack.frontend || []), ''] }
+                    })}
                   >
-                    Add {category.charAt(0).toUpperCase() + category.slice(1)} Item
+                    Add Frontend Tech
                   </button>
                 </div>
-              ))}
-            </>
+              </div>
+              <div className="form-group">
+                <label>Backend Technologies</label>
+                <div className="array-input-group">
+                  {(formData.techStack.backend || []).map((tech, index) => (
+                    <div key={index} className="form-row">
+                      <input
+                        type="text"
+                        value={tech}
+                        onChange={(e) => {
+                          const newItems = [...(formData.techStack.backend || [])];
+                          newItems[index] = e.target.value;
+                          setFormData({
+                            ...formData,
+                            techStack: { ...formData.techStack, backend: newItems }
+                          });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-small btn-danger"
+                        onClick={() => {
+                          const newItems = (formData.techStack.backend || []).filter((_: string, i: number) => i !== index);
+                          setFormData({
+                            ...formData,
+                            techStack: { ...formData.techStack, backend: newItems }
+                          });
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="btn btn-small"
+                    onClick={() => setFormData({
+                      ...formData,
+                      techStack: { ...formData.techStack, backend: [...(formData.techStack.backend || []), ''] }
+                    })}
+                  >
+                    Add Backend Tech
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {activeTab === 'sections' && (
-            <>
-              {Object.entries(formData.sections).map(([key, section]) => (
-                <div key={key} className="form-group">
-                  <label>{section.title}</label>
-                  <textarea
-                    value={section.content}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      sections: {
-                        ...formData.sections,
-                        [key]: { ...section, content: e.target.value }
-                      }
-                    })}
-                    rows={4}
-                  />
-                </div>
-              ))}
-            </>
+            <div className="form-section">
+              <div className="form-group">
+                <label>Project Sections</label>
+                {Object.entries(formData.sections).map(([key, section]) => (
+                  <div key={key} className="form-group">
+                    <label>{section.title}</label>
+                    <textarea
+                      value={section.content}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        sections: {
+                          ...formData.sections,
+                          [key]: { ...section, content: e.target.value }
+                        }
+                      })}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
