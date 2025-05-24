@@ -1,0 +1,252 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Burendo Labs Backend API
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 128
+    Runtime: nodejs18.x
+    Environment:
+      Variables:
+        NODE_OPTIONS: --enable-source-maps
+    Tracing: Active
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Requested-With,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Access-Control-Allow-Methods'"
+      AllowOrigin: "'*'"
+      AllowCredentials: false
+      MaxAge: "'600'"
+
+Resources:
+  # Cognito User Pool
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AWS::StackName}-user-pool
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+        - Name: name
+          AttributeDataType: String
+          Required: false
+          Mutable: true
+
+  # Cognito User Pool Client
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub ${AWS::StackName}-client
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      CallbackURLs:
+        - http://localhost:5173
+      LogoutURLs:
+        - http://localhost:5173
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthScopes:
+        - email
+        - openid
+        - profile
+      AllowedOAuthFlowsUserPoolClient: true
+      SupportedIdentityProviders:
+        - COGNITO
+
+  # DynamoDB Tables
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-users
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  ProjectsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-projects
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # Lambda Functions
+  UsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/functions/users/
+      Handler: index.handler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UsersTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+      Events:
+        GetUsers:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: GET
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        GetUser:
+          Type: Api
+          Properties:
+            Path: /users/{id}
+            Method: GET
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        CreateUser:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: POST
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        UpdateUser:
+          Type: Api
+          Properties:
+            Path: /users/{id}
+            Method: PUT
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        DeleteUser:
+          Type: Api
+          Properties:
+            Path: /users/{id}
+            Method: DELETE
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        OptionsUsers:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: OPTIONS
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        OptionsUser:
+          Type: Api
+          Properties:
+            Path: /users/{id}
+            Method: OPTIONS
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+
+  ProjectsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/functions/projects/
+      Handler: index.handler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ProjectsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+      Events:
+        GetProjects:
+          Type: Api
+          Properties:
+            Path: /projects
+            Method: GET
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        GetProject:
+          Type: Api
+          Properties:
+            Path: /projects/{id}
+            Method: GET
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        CreateProject:
+          Type: Api
+          Properties:
+            Path: /projects
+            Method: POST
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        UpdateProject:
+          Type: Api
+          Properties:
+            Path: /projects/{id}
+            Method: PUT
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        DeleteProject:
+          Type: Api
+          Properties:
+            Path: /projects/{id}
+            Method: DELETE
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        OptionsProjects:
+          Type: Api
+          Properties:
+            Path: /projects
+            Method: OPTIONS
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+        OptionsProject:
+          Type: Api
+          Properties:
+            Path: /projects/{id}
+            Method: OPTIONS
+            RestApiId: !Ref ServerlessRestApi
+            Stage: Prod
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  UsersFunction:
+    Description: Users Lambda Function ARN
+    Value: !GetAtt UsersFunction.Arn
+  ProjectsFunction:
+    Description: Projects Lambda Function ARN
+    Value: !GetAtt ProjectsFunction.Arn
+  UsersTable:
+    Description: Users DynamoDB Table Name
+    Value: !Ref UsersTable
+  ProjectsTable:
+    Description: Projects DynamoDB Table Name
+    Value: !Ref ProjectsTable
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref UserPoolClient 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../../types';
-import { mockUsers } from '../../data/mockUsers';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -18,14 +17,22 @@ import {
   Typography,
   Chip,
   useTheme,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import { AdminLayout } from '../../components/layout/AdminLayout';
+import { usersService } from '../../services/users';
 
 export const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -37,12 +44,16 @@ export const AdminUsers: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setUsers(mockUsers);
+      const data = await usersService.getUsers();
+      setUsers(data);
     } catch (error) {
       console.error('Error fetching users:', error);
       setError('Failed to load users. Please try again later.');
+      setSnackbar({
+        open: true,
+        message: 'Failed to load users',
+        severity: 'error',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -54,13 +65,25 @@ export const AdminUsers: React.FC = () => {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await usersService.deleteUser(userId);
       setUsers(users.filter(user => user.id !== userId));
+      setSnackbar({
+        open: true,
+        message: 'User deleted successfully',
+        severity: 'success',
+      });
     } catch (error) {
       console.error('Error deleting user:', error);
-      setError('Failed to delete user. Please try again later.');
+      setSnackbar({
+        open: true,
+        message: 'Failed to delete user',
+        severity: 'error',
+      });
     }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   if (isLoading) {
@@ -193,6 +216,21 @@ export const AdminUsers: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleSnackbarClose} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </AdminLayout>
   );
 }; 

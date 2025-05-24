@@ -113,6 +113,7 @@ export const signUp = async (username: string, email: string, password: string):
       options: {
         userAttributes: {
           email,
+          name: username,
         },
       },
     });

@@ -1,16 +1,16 @@
 export interface User {
   id: number;
-  email: string;
   name: string;
-  role: 'admin' | 'user';
-  status: 'active' | 'inactive';
-  metadata: {
-    department: string;
-    position: string;
-    skills: string[];
-  };
+  email: string;
+  role: 'admin' | 'user' | 'manager';
+  status: 'active' | 'inactive' | 'pending';
   created_at: string;
   updated_at: string;
+  metadata?: {
+    department?: string;
+    title?: string;
+    avatar?: string;
+  };
 }
 
 export interface Challenge {

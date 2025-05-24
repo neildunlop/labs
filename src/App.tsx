@@ -23,6 +23,8 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme/theme';
 import Layout from './components/layout/Layout';
+import { UserCreate } from './pages/admin/UserCreate';
+import { UserEdit } from './pages/admin/UserEdit';
 
 function AppContent() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -128,8 +130,8 @@ function AppContent() {
           <Route path="/admin/projects/new" element={<AdminProjectForm />} />
           <Route path="/admin/projects/:id/edit" element={<AdminProjectForm />} />
           <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/users/new" element={<AdminUserForm />} />
-          <Route path="/admin/users/:id/edit" element={<AdminUserForm />} />
+          <Route path="/admin/users/new" element={<UserCreate />} />
+          <Route path="/admin/users/:id/edit" element={<UserEdit />} />
           <Route path="/admin/assignments" element={<AdminAssignments />} />
           <Route path="/admin/assignments/new" element={<AdminAssignmentForm />} />
           <Route path="/admin/assignments/:id/edit" element={<AdminAssignmentForm />} />
