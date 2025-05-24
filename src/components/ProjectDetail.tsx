@@ -26,34 +26,30 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ project }) => {
 
       <div className="project-overview">
         <h2>Overview</h2>
-        <p>{project.overview}</p>
+        <div className="section-content">
+          <ReactMarkdown>{project.overview}</ReactMarkdown>
+        </div>
       </div>
 
       <div className="project-objectives">
         <h2>Objectives</h2>
-        <ul>
-          {project.objectives.map((objective, index) => (
-            <li key={index}>{objective}</li>
-          ))}
-        </ul>
+        <div className="section-content">
+          <ReactMarkdown>{project.objectives.join('\n\n')}</ReactMarkdown>
+        </div>
       </div>
 
       <div className="project-deliverables">
         <h2>Deliverables</h2>
-        <ul>
-          {project.deliverables.map((deliverable, index) => (
-            <li key={index}>{deliverable}</li>
-          ))}
-        </ul>
+        <div className="section-content">
+          <ReactMarkdown>{project.deliverables.join('\n\n')}</ReactMarkdown>
+        </div>
       </div>
 
       <div className="project-considerations">
         <h2>Considerations</h2>
-        <ul>
-          {project.considerations.map((consideration, index) => (
-            <li key={index}>{consideration}</li>
-          ))}
-        </ul>
+        <div className="section-content">
+          <ReactMarkdown>{project.considerations.join('\n\n')}</ReactMarkdown>
+        </div>
       </div>
 
       <div className="project-sections">

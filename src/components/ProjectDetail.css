@@ -2,17 +2,33 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  color: #374151;
+  line-height: 1.6;
+  text-align: left;
+}
+
+/* Hide the page header and its content on project detail page */
+.project-detail ~ .projects-header-text,
+.projects-header-text,
+.projects-header-text h1,
+.projects-header-text p {
+  display: none !important;
 }
 
 .project-header {
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
 }
 
 .project-header h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 1rem 0;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.2;
+  text-align: left;
 }
 
 .project-meta {
@@ -20,6 +36,7 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+  justify-content: flex-start;
 }
 
 .status,
@@ -71,11 +88,23 @@
 .project-deliverables,
 .project-considerations,
 .project-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  margin-bottom: 2.5rem;
+  padding: 2rem;
   background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+}
+
+.project-overview:hover,
+.project-objectives:hover,
+.project-deliverables:hover,
+.project-considerations:hover,
+.project-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
 .project-overview h2,
@@ -83,10 +112,42 @@
 .project-deliverables h2,
 .project-considerations h2,
 .project-section h2 {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 1rem 0;
+  color: #111827;
+  margin: 0 0 1.25rem 0;
+  padding: 0.5rem 0;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.project-overview h2::before,
+.project-objectives h2::before,
+.project-deliverables h2::before,
+.project-considerations h2::before,
+.project-section h2::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 1.5rem;
+  background-color: #2563eb;
+  border-radius: 2px;
+}
+
+/* Remove the ::after pseudo-element and hover effects */
+.project-overview h2::after,
+.project-objectives h2::after,
+.project-deliverables h2::after,
+.project-considerations h2::after,
+.project-section h2::after,
+.project-overview:hover h2::after,
+.project-objectives:hover h2::after,
+.project-deliverables:hover h2::after,
+.project-considerations:hover h2::after,
+.project-section:hover h2::after {
+  display: none;
 }
 
 .project-objectives ul,
@@ -95,18 +156,77 @@
   list-style-type: disc;
   padding-left: 1.5rem;
   margin: 0;
+  text-align: left;
 }
 
 .project-objectives li,
 .project-deliverables li,
 .project-considerations li {
-  margin-bottom: 0.5rem;
-  color: #4b5563;
+  margin-bottom: 0.75rem;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  transition: none;
+  text-align: left;
+}
+
+.project-objectives li:last-child,
+.project-deliverables li:last-child,
+.project-considerations li:last-child {
+  margin-bottom: 0;
+}
+
+.project-objectives li:hover,
+.project-deliverables li:hover,
+.project-considerations li:hover {
+  background-color: transparent;
 }
 
 .section-content {
   color: #4b5563;
+  line-height: 1.7;
+  font-size: 1.0625rem;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+.section-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+.section-content p:last-child {
+  margin-bottom: 0;
+}
+
+.section-content ul {
+  list-style-type: disc;
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+  white-space: normal;
+}
+
+.section-content li {
+  margin-bottom: 0.5rem;
   line-height: 1.6;
+  white-space: normal;
+}
+
+.section-content li:last-child {
+  margin-bottom: 0;
+}
+
+/* Preserve markdown alignment */
+.section-content p[style*="text-align: center"],
+.section-content div[style*="text-align: center"] {
+  text-align: center !important;
+}
+
+.section-content p[style*="text-align: right"],
+.section-content div[style*="text-align: right"] {
+  text-align: right !important;
 }
 
 .project-tags {
@@ -114,6 +234,9 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+  justify-content: flex-start;
 }
 
 /* Markdown content styles */
@@ -123,49 +246,64 @@
 .section-content h4,
 .section-content h5,
 .section-content h6 {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   margin-bottom: 1rem;
   font-weight: 600;
   line-height: 1.25;
+  color: #111827;
+  text-align: left;
 }
 
-.section-content p {
-  margin-bottom: 1rem;
-  line-height: 1.6;
-}
-
-.section-content ul,
-.section-content ol {
-  margin-bottom: 1rem;
-  padding-left: 1.5rem;
-}
-
-.section-content li {
-  margin-bottom: 0.5rem;
-}
+.section-content h1 { font-size: 2rem; }
+.section-content h2 { font-size: 1.75rem; }
+.section-content h3 { font-size: 1.5rem; }
+.section-content h4 { font-size: 1.25rem; }
+.section-content h5 { font-size: 1.125rem; }
+.section-content h6 { font-size: 1rem; }
 
 .section-content code {
   background-color: #f3f4f6;
   padding: 0.2rem 0.4rem;
   border-radius: 0.25rem;
   font-size: 0.875rem;
+  color: #111827;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  text-align: left;
 }
 
 .section-content pre {
   background-color: #1a1a1a;
   color: #ffffff;
-  padding: 1rem;
-  border-radius: 0.5rem;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
   overflow-x: auto;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-wrap;
 }
 
 .section-content blockquote {
   border-left: 4px solid #e5e7eb;
-  padding-left: 1rem;
-  margin-left: 0;
-  margin-bottom: 1rem;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
   color: #4b5563;
+  font-style: italic;
+  text-align: left;
+}
+
+.section-content a {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.section-content a:hover {
+  border-bottom-color: #2563eb;
 }
 
 .project-detail-team-grid {

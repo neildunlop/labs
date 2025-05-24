@@ -28,7 +28,6 @@ import './AdminProjectForm.css';
 const initialFormData: Omit<Project, 'id' | 'created_at' | 'updated_at'> = {
   title: '',
   overview: '',
-  description: '',
   status: 'draft',
   objectives: [],
   deliverables: [],
@@ -64,7 +63,6 @@ export const AdminProjectForm: React.FC = () => {
       setFormData({
         title: project.title || '',
         overview: project.overview || '',
-        description: project.description || '',
         status: project.status || 'draft',
         objectives: project.objectives || [],
         deliverables: project.deliverables || [],
@@ -240,16 +238,6 @@ export const AdminProjectForm: React.FC = () => {
           <MDXEditor
             markdown={formData.overview || ''}
             onChange={(markdown) => setFormData(prev => ({ ...prev, overview: markdown }))}
-            plugins={editorPlugins}
-            contentEditableClassName="mdx-editor"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="description">Description</label>
-          <MDXEditor
-            markdown={formData.description || ''}
-            onChange={(markdown) => setFormData(prev => ({ ...prev, description: markdown }))}
             plugins={editorPlugins}
             contentEditableClassName="mdx-editor"
           />
