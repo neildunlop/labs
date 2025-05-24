@@ -1,168 +1,264 @@
 import React, { useState, useEffect } from 'react';
-import { Project } from '../../types';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Card,
+  Typography,
+  IconButton,
+  Chip,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Avatar,
+  useTheme,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Code as CodeIcon,
+} from '@mui/icons-material';
+import { Project as ApiProject } from '../../api/projects';
 import { getProjects, deleteProject } from '../../api/projects';
-import { Link, useNavigate } from 'react-router-dom';
-import { FaEdit as FaEditIcon, FaTrash as FaTrashIcon } from 'react-icons/fa';
-
-function isModernMetadata(meta: any): meta is { type: string; difficulty: string } {
-  return (
-    meta &&
-    typeof meta === 'object' &&
-    typeof meta.type === 'string' &&
-    typeof meta.difficulty === 'string'
-  );
-}
-
-function mapApiProjectToFrontend(project: any): Project {
-  // Defensive mapping for all required fields
-  const meta = project.metadata || {};
-  // Only include type/difficulty if they exist, otherwise fallback to empty string/default
-  return {
-    id: project.id,
-    title: project.title || '',
-    overview: project.overview || '',
-    status: project.status || 'draft',
-    created_at: project.created_at || project.createdAt || '',
-    updated_at: project.updated_at || project.updatedAt || '',
-    objectives: Array.isArray(project.objectives) ? project.objectives : [],
-    deliverables: Array.isArray(project.deliverables) ? project.deliverables : [],
-    considerations: Array.isArray(project.considerations) ? project.considerations : [],
-    techStack: project.techStack || {
-      frontend: [], backend: [], database: [], infrastructure: [], tools: [], other: []
-    },
-    metadata: {
-      ...(typeof meta === 'object' ? meta : {}),
-      type: typeof meta.type === 'string' ? meta.type : '',
-      estimatedTime: typeof meta.estimatedTime === 'string' ? meta.estimatedTime : '',
-      teamSize: meta.teamSize || { min: 1, max: 1 },
-      difficulty: typeof meta.difficulty === 'string' ? meta.difficulty : 'beginner',
-      tags: Array.isArray(meta.tags) ? meta.tags : [],
-    },
-    sections: project.sections || {},
-  };
-}
+import { AdminLayout } from '../../components/layout/AdminLayout';
 
 export const AdminProjects: React.FC = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [projects, setProjects] = useState<ApiProject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
   const navigate = useNavigate();
+  const theme = useTheme();
 
   useEffect(() => {
-    fetchProjects();
+    loadProjects();
   }, []);
 
-  const fetchProjects = async () => {
-    setLoading(true);
-    setError(null);
+  const loadProjects = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
       const data = await getProjects();
-      setProjects(Array.isArray(data) ? data.map(mapApiProjectToFrontend) : []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch projects');
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      setError('Failed to load projects. Please try again later.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleDelete = async (projectId: number) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) {
-      return;
-    }
-    setDeletingId(projectId);
-    setError(null);
-    try {
-      await deleteProject(projectId.toString());
-      setProjects(projects.filter(project => project.id !== projectId));
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete project');
-    } finally {
-      setDeletingId(null);
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      try {
+        await deleteProject(id);
+        await loadProjects();
+      } catch (error) {
+        console.error('Error deleting project:', error);
+        setError('Failed to delete project. Please try again later.');
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <AdminLayout title="Projects" subtitle="Loading projects...">
+        <Card>
+          <Box sx={{ p: theme.spacing(3), textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary">
+              Loading projects...
+            </Typography>
+          </Box>
+        </Card>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout title="Projects" subtitle="Error loading projects">
+        <Card>
+          <Box sx={{ p: theme.spacing(3), textAlign: 'center' }}>
+            <Typography color="error" variant="h6" gutterBottom>
+              {error}
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={loadProjects}
+              sx={{ mt: theme.spacing(2) }}
+            >
+              Retry
+            </Button>
+          </Box>
+        </Card>
+      </AdminLayout>
+    );
+  }
 
   return (
-    <div className="admin-page">
-      <div className="admin-header">
-        <h1 className="admin-page-title">Manage Projects</h1>
-        <Link to="/admin/projects/new" className="btn btn-primary">
-          Create New Project
-        </Link>
-      </div>
+    <AdminLayout 
+      title="Projects" 
+      subtitle="Manage your projects and their details"
+      breadcrumbs={[
+        { label: 'Admin', href: '/admin' },
+        { label: 'Projects' }
+      ]}
+    >
+      <Box sx={{ mb: theme.spacing(4) }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: theme.spacing(3) 
+        }}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/admin/projects/new')}
+          >
+            New Project
+          </Button>
+        </Box>
 
-      {loading && <div className="admin-loading">Loading projects...</div>}
-      {error && <div className="admin-error">{error}</div>}
-
-      {!loading && !error && (
-        <div className="admin-table-container">
-          <table className="admin-table">
-            <colgroup>
-              <col style={{ width: '28%' }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '14%' }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '10%' }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Difficulty</th>
-                <th>Created</th>
-                <th>Updated</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.map((project) => (
-                <tr key={project.id}>
-                  <td>{project.title}</td>
-                  <td>
-                    <span className="tech-tag">
-                      {isModernMetadata(project.metadata)
-                        ? project.metadata.type.charAt(0).toUpperCase() + project.metadata.type.slice(1)
-                        : ''}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`project-status status-${project.status}`}>
-                      {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`pill pill-difficulty pill-difficulty-${isModernMetadata(project.metadata) ? project.metadata.difficulty.toLowerCase() : 'beginner'}`}>{isModernMetadata(project.metadata) ? project.metadata.difficulty : 'beginner'}</span>
-                  </td>
-                  <td>{project.created_at ? new Date(project.created_at).toLocaleDateString() : ''}</td>
-                  <td>{project.updated_at ? new Date(project.updated_at).toLocaleDateString() : ''}</td>
-                  <td>
-                    <button
-                      className="btn btn-small btn-secondary icon-btn"
-                      onClick={() => navigate(`/admin/projects/${project.id}/edit`)}
-                      aria-label="Edit Project"
-                      title="Edit Project"
+        {projects.length === 0 ? (
+          <Card>
+            <Box sx={{ p: theme.spacing(4), textAlign: 'center' }}>
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No projects found
+              </Typography>
+              <Typography color="text.secondary" sx={{ mb: theme.spacing(2) }}>
+                Create your first project to get started!
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={() => navigate('/admin/projects/new')}
+              >
+                Create Project
+              </Button>
+            </Box>
+          </Card>
+        ) : (
+          <Card>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Project</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Technologies</TableCell>
+                    <TableCell>Tags</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {projects.map((project) => (
+                    <TableRow
+                      key={project.id}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: theme.palette.grey[50],
+                        },
+                      }}
                     >
-                      {FaEditIcon({}) as JSX.Element}
-                    </button>
-                    <button
-                      className="btn btn-small btn-danger icon-btn"
-                      onClick={() => handleDelete(project.id)}
-                      aria-label="Delete Project"
-                      title="Delete Project"
-                      disabled={deletingId === project.id}
-                    >
-                      {deletingId === project.id ? '...' : (FaTrashIcon({}) as JSX.Element)}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: theme.spacing(2) }}>
+                          <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
+                            <CodeIcon />
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              {project.title}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: '300px',
+                            }}>
+                              {project.description}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={project.status}
+                          color={project.status === 'published' ? 'success' : 'default'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1}>
+                          {project.technologies.slice(0, 2).map((tech, index) => (
+                            <Chip
+                              key={index}
+                              label={tech}
+                              color="primary"
+                              size="small"
+                            />
+                          ))}
+                          {project.technologies.length > 2 && (
+                            <Chip
+                              label={`+${project.technologies.length - 2}`}
+                              variant="outlined"
+                              size="small"
+                            />
+                          )}
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: theme.spacing(0.5) }}>
+                          {(project.tags || []).slice(0, 3).map((tag, index) => (
+                            <Chip
+                              key={index}
+                              label={tag}
+                              size="small"
+                              variant="outlined"
+                            />
+                          ))}
+                          {(project.tags || []).length > 3 && (
+                            <Chip
+                              label={`+${(project.tags || []).length - 3}`}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Stack>
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => navigate(`/admin/projects/${project.id}/edit`)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDelete(project.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+        )}
+      </Box>
+    </AdminLayout>
   );
 }; 

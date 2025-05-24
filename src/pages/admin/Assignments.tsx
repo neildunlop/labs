@@ -2,14 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { Assignment, Project, User } from '../../types';
 import { mockAssignments, mockProjects } from '../../data/mockData';
 import { mockUsers } from '../../data/mockUsers';
-import { Link, useNavigate } from 'react-router-dom';
-import { FaEdit as FaEditIcon, FaTrash as FaTrashIcon } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Card,
+  Container,
+  IconButton,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+  Chip,
+  useTheme,
+} from '@mui/material';
+import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import { AdminLayout } from '../../components/layout/AdminLayout';
 
 export const AdminAssignments: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const theme = useTheme();
 
   useEffect(() => {
     fetchData();
@@ -17,6 +38,8 @@ export const AdminAssignments: React.FC = () => {
 
   const fetchData = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
       // Simulate API calls
       await Promise.all([
         new Promise(resolve => setTimeout(resolve, 500)),
@@ -28,6 +51,9 @@ export const AdminAssignments: React.FC = () => {
       setUsers(mockUsers);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setError('Failed to load assignments. Please try again later.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -42,6 +68,7 @@ export const AdminAssignments: React.FC = () => {
       setAssignments(assignments.filter(assignment => assignment.id !== assignmentId));
     } catch (error) {
       console.error('Error deleting assignment:', error);
+      setError('Failed to delete assignment. Please try again later.');
     }
   };
 
@@ -55,69 +82,138 @@ export const AdminAssignments: React.FC = () => {
     return user ? user.name : 'Unknown User';
   };
 
-  return (
-    <div className="admin-page">
-      <div className="admin-header">
-        <h1 className="admin-page-title">Manage Assignments</h1>
-        <Link to="/admin/assignments/new" className="btn btn-primary">
-          Create New Assignment
-        </Link>
-      </div>
+  if (isLoading) {
+    return (
+      <AdminLayout 
+        title="Assignments" 
+        subtitle="Loading assignments..."
+      >
+        <Card>
+          <Box sx={{ p: theme.spacing(3), textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary">
+              Loading assignments...
+            </Typography>
+          </Box>
+        </Card>
+      </AdminLayout>
+    );
+  }
 
-      <div className="admin-table-container">
-        <table className="admin-table">
-          <colgroup>
-            <col style={{ width: '28%' }} />
-            <col style={{ width: '16%' }} />
-            <col style={{ width: '14%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '8%' }} />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Project</th>
-              <th>User</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+  return (
+    <AdminLayout 
+      title="Assignments"
+      subtitle="Manage project assignments and team members"
+      breadcrumbs={[
+        { label: 'Admin', href: '/admin' },
+        { label: 'Assignments' }
+      ]}
+    >
+      <Box sx={{ mb: theme.spacing(3), display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/admin/assignments/new')}
+          sx={{
+            '&:hover': {
+              backgroundColor: theme.palette.primary.dark,
+            },
+          }}
+        >
+          Create New Assignment
+        </Button>
+      </Box>
+
+      {error && (
+        <Typography 
+          color="error" 
+          sx={{ 
+            mb: theme.spacing(3),
+            p: theme.spacing(2),
+            backgroundColor: theme.palette.error.light,
+            borderRadius: theme.shape.borderRadius,
+          }}
+        >
+          {error}
+        </Typography>
+      )}
+
+      <TableContainer component={Paper} sx={{ boxShadow: theme.shadows[1] }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Project</TableCell>
+              <TableCell>User</TableCell>
+              <TableCell>Role</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Start Date</TableCell>
+              <TableCell>End Date</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {assignments.map((assignment) => (
-              <tr key={assignment.id}>
-                <td>{getProjectTitle(assignment.project_id)}</td>
-                <td>{getUserName(assignment.user_id)}</td>
-                <td><span className={`pill pill-role pill-role-${assignment.role.toLowerCase()}`}>{assignment.role}</span></td>
-                <td>{assignment.status}</td>
-                <td>{new Date(assignment.start_date).toLocaleDateString()}</td>
-                <td>{assignment.end_date ? new Date(assignment.end_date).toLocaleDateString() : '-'}</td>
-                <td>
-                  <button
-                    className="btn btn-small btn-secondary icon-btn"
+              <TableRow 
+                key={assignment.id}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: theme.palette.grey[50],
+                  },
+                }}
+              >
+                <TableCell>{getProjectTitle(assignment.project_id)}</TableCell>
+                <TableCell>{getUserName(assignment.user_id)}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={assignment.role}
+                    color={assignment.role.toLowerCase() === 'lead' ? 'primary' : 'default'}
+                    size="small"
+                    sx={{ minWidth: '100px' }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={assignment.status}
+                    color={assignment.status === 'active' ? 'success' : 'default'}
+                    size="small"
+                    variant="outlined"
+                  />
+                </TableCell>
+                <TableCell>{new Date(assignment.start_date).toLocaleDateString()}</TableCell>
+                <TableCell>{assignment.end_date ? new Date(assignment.end_date).toLocaleDateString() : '-'}</TableCell>
+                <TableCell align="right">
+                  <IconButton
+                    size="small"
                     onClick={() => navigate(`/admin/assignments/${assignment.id}/edit`)}
-                    aria-label="Edit Assignment"
-                    title="Edit Assignment"
+                    sx={{
+                      color: theme.palette.primary.main,
+                      '&:hover': {
+                        backgroundColor: theme.palette.primary.light,
+                        color: theme.palette.primary.contrastText,
+                      },
+                    }}
                   >
-                    {FaEditIcon({})}
-                  </button>
-                  <button
-                    className="btn btn-small btn-danger icon-btn"
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    size="small"
                     onClick={() => handleDelete(assignment.id)}
-                    aria-label="Delete Assignment"
-                    title="Delete Assignment"
+                    sx={{
+                      color: theme.palette.error.main,
+                      '&:hover': {
+                        backgroundColor: theme.palette.error.light,
+                        color: theme.palette.error.contrastText,
+                      },
+                    }}
                   >
-                    {FaTrashIcon({})}
-                  </button>
-                </td>
-              </tr>
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </AdminLayout>
   );
 }; 

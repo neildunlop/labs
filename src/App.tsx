@@ -19,6 +19,10 @@ import SignUp from './pages/SignUp';
 import SuggestProject from './pages/SuggestProject';
 import './styles/admin.css';
 import './App.css';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme/theme';
+import Layout from './components/layout/Layout';
 
 function AppContent() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -137,11 +141,14 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </Router>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 
