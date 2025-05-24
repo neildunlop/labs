@@ -112,39 +112,42 @@ export interface SDLCChallenge extends Challenge {
   };
 }
 
+export interface ProjectMetadata {
+  type: string;
+  estimatedTime: string;
+  teamSize: {
+    min: number;
+    max: number;
+  };
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  tags: string[];
+}
+
+export interface ProjectSection {
+  id: string;
+  title: string;
+  content: string;
+  order: number;
+  type: string;
+  metadata?: Record<string, any>;
+}
+
 export interface Project {
-  id: number;
+  id: string;
   title: string;
   overview: string;
-  status: 'draft' | 'active' | 'completed' | 'archived';
+  description: string;
+  status: 'draft' | 'published' | 'archived';
   objectives: string[];
-  deliverables: {
-    title: string;
-    description: string;
-    status: 'pending' | 'in_progress' | 'completed';
-  }[];
+  deliverables: string[];
   considerations: string[];
-  techStack: {
-    frontend: string[];
-    backend: string[];
-    database: string[];
-    infrastructure: string[];
-  };
-  metadata: {
-    client: string;
-    startDate: string;
-    endDate: string | null;
-    budget: number;
-    teamSize: number;
-  };
-  sections: {
-    [key: string]: {
-      title: string;
-      content: string;
-    };
-  };
-  created_at: string;
-  updated_at: string;
+  metadata: ProjectMetadata;
+  sections: ProjectSection[];
+  team: any[];
+  timeline: string;
+  technologies: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Assignment {
@@ -161,31 +164,15 @@ export interface Assignment {
 }
 
 export interface WebsiteProject extends Project {
-  sections: {
-    publicFeatures: {
-      title: string;
-      content: string;
-    };
-    adminFeatures: {
-      title: string;
-      content: string;
-    };
+  metadata: ProjectMetadata & {
+    type: 'website';
   };
+  sections: ProjectSection[];
 }
 
 export interface AIProject extends Project {
-  sections: {
-    knowledgeBase: {
-      title: string;
-      content: string;
-    };
-    chatbot: {
-      title: string;
-      content: string;
-    };
-    integration: {
-      title: string;
-      content: string;
-    };
+  metadata: ProjectMetadata & {
+    type: 'ai';
   };
+  sections: ProjectSection[];
 } 

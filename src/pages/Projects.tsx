@@ -18,9 +18,6 @@ function mapApiProjectToFrontend(project: any): Project {
     objectives: Array.isArray(project.objectives) ? project.objectives : [],
     deliverables: Array.isArray(project.deliverables) ? project.deliverables : [],
     considerations: Array.isArray(project.considerations) ? project.considerations : [],
-    techStack: project.techStack || {
-      frontend: [], backend: [], database: [], infrastructure: [], tools: [], other: []
-    },
     metadata: {
       ...(typeof meta === 'object' ? meta : {}),
       type: typeof meta.type === 'string' ? meta.type : '',
@@ -29,7 +26,16 @@ function mapApiProjectToFrontend(project: any): Project {
       difficulty: typeof meta.difficulty === 'string' ? meta.difficulty : 'beginner',
       tags: Array.isArray(meta.tags) ? meta.tags : [],
     },
-    sections: project.sections || {},
+    sections: Array.isArray(project.sections) 
+      ? project.sections.map((section: any, index: number) => ({
+          id: section.id || `section-${index}`,
+          title: section.title || '',
+          content: section.content || '',
+          order: section.order || index,
+          type: section.type || 'text',
+          metadata: section.metadata || {}
+        }))
+      : []
   };
 }
 

@@ -1,490 +1,419 @@
 import React, { useState, useEffect } from 'react';
-import { Project, Deliverable, TechStack } from '../../types';
-import { getProjects, createProject, updateProject, getProject } from '../../api/projects';
 import { useNavigate, useParams } from 'react-router-dom';
+import type { Project, ProjectSection } from '../../types/index';
+import { getProject, createProject, updateProject } from '../../api/projects';
+import { ProjectSectionEditor } from '../../components/admin/ProjectSectionEditor';
+import { MDXEditor } from '@mdxeditor/editor';
+import {
+  headingsPlugin,
+  listsPlugin,
+  quotePlugin,
+  thematicBreakPlugin,
+  markdownShortcutPlugin,
+  toolbarPlugin,
+  BoldItalicUnderlineToggles,
+  BlockTypeSelect,
+  CreateLink,
+  InsertThematicBreak,
+  ListsToggle,
+  UndoRedo,
+  InsertImage,
+  InsertTable,
+  InsertCodeBlock,
+  InsertFrontmatter
+} from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
+import './AdminProjectForm.css';
 
-interface ProjectFormData {
-  title: string;
-  overview: string;
-  status: 'draft' | 'active' | 'completed' | 'archived';
-  objectives: string[];
-  deliverables: Deliverable[];
-  considerations: string[];
-  techStack: TechStack;
-  metadata: {
-    type: 'website' | 'ai';
-    estimatedTime: string;
-    teamSize: {
-      min: number;
-      max: number;
-    };
-    difficulty: 'beginner' | 'intermediate' | 'advanced';
-    tags: string[];
-  };
-  sections: Record<string, {
-    title: string;
-    content: string;
-  }>;
-}
-
-const initialFormData: ProjectFormData = {
+const initialFormData: Omit<Project, 'id' | 'created_at' | 'updated_at'> = {
   title: '',
   overview: '',
+  description: '',
   status: 'draft',
-  objectives: [''],
-  deliverables: [{
-    id: 1,
-    title: '',
-    description: '',
-    type: 'code',
-    requirements: ['']
-  }],
-  considerations: [''],
-  techStack: {
-    frontend: [''],
-    backend: [''],
-    database: [''],
-    infrastructure: [''],
-    tools: [''],
-    other: [''],
-  },
+  objectives: [],
+  deliverables: [],
+  considerations: [],
   metadata: {
-    type: 'website',
+    type: '',
     estimatedTime: '',
-    teamSize: {
-      min: 1,
-      max: 1
-    },
-    difficulty: 'intermediate',
-    tags: ['']
+    teamSize: { min: 1, max: 1 },
+    difficulty: 'beginner',
+    tags: [],
   },
-  sections: {
-    publicFeatures: {
-      title: 'Public Features',
-      content: ''
-    }
-  }
+  sections: [],
 };
 
-function mapFormDataToProject(formData: ProjectFormData): any {
-  // Map form data to backend Project type, filling in required fields
-  return {
-    ...formData,
-    description: formData.overview, // Use overview as description for now
-    tags: formData.metadata.tags || [],
-    team: [], // You can add a team field in the UI if needed
-    timeline: formData.metadata.estimatedTime || '',
-    technologies: [
-      ...(formData.techStack.frontend || []),
-      ...(formData.techStack.backend || []),
-      ...(formData.techStack.database || []),
-      ...(formData.techStack.infrastructure || []),
-      ...(formData.techStack.tools || []),
-      ...(formData.techStack.other || [])
-    ],
-    createdAt: undefined,
-    updatedAt: undefined,
-  };
-}
-
-function isValidMetadata(meta: any): meta is ProjectFormData['metadata'] {
-  return (
-    meta &&
-    typeof meta === 'object' &&
-    typeof meta.type === 'string' &&
-    typeof meta.estimatedTime === 'string' &&
-    typeof meta.teamSize === 'object' &&
-    typeof meta.difficulty === 'string' &&
-    Array.isArray(meta.tags)
-  );
-}
-
-function mapApiProjectToFormData(project: any): ProjectFormData {
-  return {
-    title: project.title || '',
-    overview: project.overview || project.description || '',
-    status: project.status || 'draft',
-    objectives: Array.isArray(project.objectives) ? project.objectives : [],
-    deliverables: Array.isArray(project.deliverables)
-      ? project.deliverables.map((d: any, idx: number) => ({
-          id: d.id ?? idx + 1,
-          title: d.title ?? '',
-          description: d.description ?? '',
-          type: d.type ?? 'code',
-          requirements: d.requirements ?? []
-        }))
-      : [],
-    considerations: Array.isArray(project.considerations) ? project.considerations : [],
-    techStack: project.techStack || {
-      frontend: [], backend: [], database: [], infrastructure: [], tools: [], other: []
-    },
-    metadata: isValidMetadata(project.metadata)
-      ? project.metadata
-      : initialFormData.metadata,
-    sections: project.sections || {},
-  };
-}
-
 export const AdminProjectForm: React.FC = () => {
-  const [formData, setFormData] = useState<ProjectFormData>(initialFormData);
-  const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'tech' | 'sections'>('basic');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Omit<Project, 'id' | 'created_at' | 'updated_at'>>(initialFormData);
 
   useEffect(() => {
     if (id) {
-      // Fetch the project from the API for editing
-      (async () => {
-        try {
-          const project = await getProject(id);
-          setFormData(mapApiProjectToFormData(project));
-        } catch (error) {
-          setError('Failed to load project for editing');
-        }
-      })();
+      loadProject();
+    } else {
+      setLoading(false);
     }
   }, [id]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const loadProject = async () => {
     try {
-      const mapped = mapFormDataToProject(formData);
-      if (id) {
-        // Update existing project
-        await updateProject(id, mapped);
-      } else {
-        // Create new project
-        await createProject(mapped);
-      }
-      navigate('/admin/projects');
-    } catch (error: any) {
-      setError(error.message || 'Error saving project');
+      const project = await getProject(id!);
+      setFormData({
+        title: project.title || '',
+        overview: project.overview || '',
+        description: project.description || '',
+        status: project.status || 'draft',
+        objectives: project.objectives || [],
+        deliverables: project.deliverables || [],
+        considerations: project.considerations || [],
+        metadata: {
+          type: project.metadata?.type || '',
+          estimatedTime: project.metadata?.estimatedTime || '',
+          teamSize: project.metadata?.teamSize || { min: 1, max: 1 },
+          difficulty: project.metadata?.difficulty || 'beginner',
+          tags: project.metadata?.tags || [],
+        },
+        sections: project.sections || [],
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to load project');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleArrayInput = (
-    array: string[],
-    index: number,
-    value: string,
-    setter: (newArray: string[]) => void
-  ) => {
-    const newArray = [...array];
-    newArray[index] = value;
-    setter(newArray);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const projectData = {
+        ...formData,
+        description: formData.overview,
+        team: [],
+        timeline: formData.metadata.estimatedTime,
+        technologies: [],
+        techStack: {
+          frontend: [],
+          backend: [],
+          database: [],
+          infrastructure: [],
+          tools: [],
+          other: []
+        }
+      };
+
+      console.log('Submitting project data:', JSON.stringify(projectData, null, 2));
+
+      if (id) {
+        console.log('Updating project with ID:', id);
+        const response = await updateProject(id, projectData);
+        console.log('Update response:', response);
+      } else {
+        console.log('Creating new project');
+        const response = await createProject(projectData);
+        console.log('Create response:', response);
+      }
+      navigate('/admin/projects');
+    } catch (err: any) {
+      console.error('Error submitting project:', err);
+      // Try to get more detailed error information
+      let errorMessage = 'Failed to save project';
+      if (err.response) {
+        try {
+          const errorData = await err.response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = err.message || errorMessage;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
+      setLoading(false);
+    }
   };
 
-  const addArrayItem = (array: string[], setter: (newArray: string[]) => void) => {
-    setter([...array, '']);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    if (name.startsWith('metadata.')) {
+      const metadataField = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          [metadataField]: value,
+        },
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
-  const removeArrayItem = (array: string[], index: number, setter: (newArray: string[]) => void) => {
-    setter(array.filter((_: string, i: number) => i !== index));
+  const handleTeamSizeChange = (field: 'min' | 'max', value: string) => {
+    const numValue = parseInt(value, 10) || 1;
+    setFormData(prev => ({
+      ...prev,
+      metadata: {
+        ...prev.metadata,
+        teamSize: {
+          ...prev.metadata.teamSize,
+          [field]: numValue,
+        },
+      },
+    }));
   };
+
+  const handleArrayInputChange = (field: keyof Project, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value.split('\n').filter(item => item.trim()),
+    }));
+  };
+
+  const handleSectionsChange = (sections: ProjectSection[]) => {
+    setFormData(prev => ({
+      ...prev,
+      sections,
+    }));
+  };
+
+  const editorPlugins = [
+    headingsPlugin(),
+    listsPlugin(),
+    quotePlugin(),
+    thematicBreakPlugin(),
+    markdownShortcutPlugin(),
+    toolbarPlugin({
+      toolbarContents: () => (
+        <>
+          <UndoRedo />
+          <BlockTypeSelect />
+          <BoldItalicUnderlineToggles />
+          <ListsToggle />
+          <CreateLink />
+          <InsertImage />
+          <InsertTable />
+          <InsertCodeBlock />
+          <InsertThematicBreak />
+          <InsertFrontmatter />
+        </>
+      )
+    })
+  ];
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return (
+    <div className="error-message">
+      <h3>Error</h3>
+      <p>{error}</p>
+      <button onClick={() => setError(null)}>Dismiss</button>
+    </div>
+  );
 
   return (
-    <div className="admin-page">
-      <div className="admin-header">
-        <h1 className="admin-page-title">{id ? 'Edit Project' : 'Create New Project'}</h1>
-        <button
-          className="btn btn-secondary"
-          onClick={() => navigate('/admin/projects')}
-        >
-          Back to Projects
-        </button>
-      </div>
-
+    <div className="admin-form-container">
+      <h2>{id ? 'Edit Project' : 'Create Project'}</h2>
+      {error && <div className="error-message">{error}</div>}
       <form onSubmit={handleSubmit} className="admin-form">
-        <div className="form-tabs">
-          <button
-            type="button"
-            className={`tab-button ${activeTab === 'basic' ? 'active' : ''}`}
-            onClick={() => setActiveTab('basic')}
-          >
-            Basic Info
-          </button>
-          <button
-            type="button"
-            className={`tab-button ${activeTab === 'details' ? 'active' : ''}`}
-            onClick={() => setActiveTab('details')}
-          >
-            Details
-          </button>
-          <button
-            type="button"
-            className={`tab-button ${activeTab === 'tech' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tech')}
-          >
-            Tech Stack
-          </button>
-          <button
-            type="button"
-            className={`tab-button ${activeTab === 'sections' ? 'active' : ''}`}
-            onClick={() => setActiveTab('sections')}
-          >
-            Sections
-          </button>
+        <div className="form-group">
+          <label htmlFor="title">Title</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleInputChange}
+            required
+          />
         </div>
 
-        <div className="tab-content">
-          {activeTab === 'basic' && (
-            <div className="form-section">
-              <div className="form-group">
-                <label htmlFor="title">Title</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="overview">Overview</label>
-                <textarea
-                  id="overview"
-                  name="overview"
-                  value={formData.overview}
-                  onChange={(e) => setFormData({ ...formData, overview: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="status">Status</label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as Project['status'] })}
-                  required
-                >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-            </div>
-          )}
+        <div className="form-group">
+          <label htmlFor="overview">Overview</label>
+          <MDXEditor
+            markdown={formData.overview || ''}
+            onChange={(markdown) => setFormData(prev => ({ ...prev, overview: markdown }))}
+            plugins={editorPlugins}
+            contentEditableClassName="mdx-editor"
+          />
+        </div>
 
-          {activeTab === 'details' && (
-            <div className="form-section">
-              <div className="form-group">
-                <label htmlFor="type">Type</label>
-                <select
-                  id="type"
-                  name="type"
-                  value={formData.metadata.type}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    metadata: { ...formData.metadata, type: e.target.value as 'website' | 'ai' }
-                  })}
-                  required
-                >
-                  <option value="website">Website</option>
-                  <option value="ai">AI</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="difficulty">Difficulty</label>
-                <select
-                  id="difficulty"
-                  name="difficulty"
-                  value={formData.metadata.difficulty}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    metadata: { ...formData.metadata, difficulty: e.target.value as 'beginner' | 'intermediate' | 'advanced' }
-                  })}
-                  required
-                >
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="estimatedTime">Estimated Time</label>
-                <input
-                  type="text"
-                  id="estimatedTime"
-                  name="estimatedTime"
-                  value={formData.metadata.estimatedTime}
-                  onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, estimatedTime: e.target.value } })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Team Size</label>
-                <div className="form-row">
-                  <input
-                    type="number"
-                    name="teamSize.min"
-                    value={formData.metadata.teamSize.min}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      metadata: { ...formData.metadata, teamSize: { ...formData.metadata.teamSize, min: Number(e.target.value) } }
-                    })}
-                    min="1"
-                    required
-                  />
-                  <span>to</span>
-                  <input
-                    type="number"
-                    name="teamSize.max"
-                    value={formData.metadata.teamSize.max}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      metadata: { ...formData.metadata, teamSize: { ...formData.metadata.teamSize, max: Number(e.target.value) } }
-                    })}
-                    min="1"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+        <div className="form-group">
+          <label htmlFor="description">Description</label>
+          <MDXEditor
+            markdown={formData.description || ''}
+            onChange={(markdown) => setFormData(prev => ({ ...prev, description: markdown }))}
+            plugins={editorPlugins}
+            contentEditableClassName="mdx-editor"
+          />
+        </div>
 
-          {activeTab === 'tech' && (
-            <div className="form-section">
-              <div className="form-group">
-                <label>Frontend Technologies</label>
-                <div className="array-input-group">
-                  {(formData.techStack.frontend || []).map((tech, index) => (
-                    <div key={index} className="form-row">
-                      <input
-                        type="text"
-                        value={tech}
-                        onChange={(e) => {
-                          const newItems = [...(formData.techStack.frontend || [])];
-                          newItems[index] = e.target.value;
-                          setFormData({
-                            ...formData,
-                            techStack: { ...formData.techStack, frontend: newItems }
-                          });
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-small btn-danger"
-                        onClick={() => {
-                          const newItems = (formData.techStack.frontend || []).filter((_: string, i: number) => i !== index);
-                          setFormData({
-                            ...formData,
-                            techStack: { ...formData.techStack, frontend: newItems }
-                          });
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="btn btn-small"
-                    onClick={() => setFormData({
-                      ...formData,
-                      techStack: { ...formData.techStack, frontend: [...(formData.techStack.frontend || []), ''] }
-                    })}
-                  >
-                    Add Frontend Tech
-                  </button>
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Backend Technologies</label>
-                <div className="array-input-group">
-                  {(formData.techStack.backend || []).map((tech, index) => (
-                    <div key={index} className="form-row">
-                      <input
-                        type="text"
-                        value={tech}
-                        onChange={(e) => {
-                          const newItems = [...(formData.techStack.backend || [])];
-                          newItems[index] = e.target.value;
-                          setFormData({
-                            ...formData,
-                            techStack: { ...formData.techStack, backend: newItems }
-                          });
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-small btn-danger"
-                        onClick={() => {
-                          const newItems = (formData.techStack.backend || []).filter((_: string, i: number) => i !== index);
-                          setFormData({
-                            ...formData,
-                            techStack: { ...formData.techStack, backend: newItems }
-                          });
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="btn btn-small"
-                    onClick={() => setFormData({
-                      ...formData,
-                      techStack: { ...formData.techStack, backend: [...(formData.techStack.backend || []), ''] }
-                    })}
-                  >
-                    Add Backend Tech
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+        <div className="form-group">
+          <label htmlFor="status">Status</label>
+          <select
+            id="status"
+            name="status"
+            value={formData.status}
+            onChange={handleInputChange}
+            required
+          >
+            <option value="draft">Draft</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
 
-          {activeTab === 'sections' && (
-            <div className="form-section">
-              <div className="form-group">
-                <label>Project Sections</label>
-                {Object.entries(formData.sections).map(([key, section]) => (
-                  <div key={key} className="form-group">
-                    <label>{section.title}</label>
-                    <textarea
-                      value={section.content}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        sections: {
-                          ...formData.sections,
-                          [key]: { ...section, content: e.target.value }
-                        }
-                      })}
-                    />
-                  </div>
-                ))}
-              </div>
+        <div className="form-group">
+          <label htmlFor="objectives">Objectives</label>
+          <MDXEditor
+            markdown={(formData.objectives || []).join('\n\n')}
+            onChange={(markdown) => setFormData(prev => ({
+              ...prev,
+              objectives: markdown.split('\n\n').filter(item => item.trim())
+            }))}
+            plugins={editorPlugins}
+            contentEditableClassName="mdx-editor"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="deliverables">Deliverables</label>
+          <MDXEditor
+            markdown={(formData.deliverables || []).join('\n\n')}
+            onChange={(markdown) => setFormData(prev => ({
+              ...prev,
+              deliverables: markdown.split('\n\n').filter(item => item.trim())
+            }))}
+            plugins={editorPlugins}
+            contentEditableClassName="mdx-editor"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="considerations">Considerations</label>
+          <MDXEditor
+            markdown={(formData.considerations || []).join('\n\n')}
+            onChange={(markdown) => setFormData(prev => ({
+              ...prev,
+              considerations: markdown.split('\n\n').filter(item => item.trim())
+            }))}
+            plugins={editorPlugins}
+            contentEditableClassName="mdx-editor"
+          />
+        </div>
+
+        <div className="form-section">
+          <h2>Project Metadata</h2>
+          <div className="form-group">
+            <label htmlFor="metadata.type">Type</label>
+            <input
+              type="text"
+              id="metadata.type"
+              name="metadata.type"
+              value={formData.metadata.type}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="metadata.estimatedTime">Estimated Time</label>
+            <input
+              type="text"
+              id="metadata.estimatedTime"
+              name="metadata.estimatedTime"
+              value={formData.metadata.estimatedTime}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Team Size</label>
+            <div className="team-size-inputs">
+              <input
+                type="number"
+                value={formData.metadata.teamSize.min}
+                onChange={(e) => handleTeamSizeChange('min', e.target.value)}
+                min="1"
+                required
+              />
+              <span>to</span>
+              <input
+                type="number"
+                value={formData.metadata.teamSize.max}
+                onChange={(e) => handleTeamSizeChange('max', e.target.value)}
+                min="1"
+                required
+              />
             </div>
-          )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="metadata.difficulty">Difficulty</label>
+            <select
+              id="metadata.difficulty"
+              name="metadata.difficulty"
+              value={formData.metadata.difficulty}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="metadata.tags">Tags (comma-separated)</label>
+            <input
+              type="text"
+              id="metadata.tags"
+              name="metadata.tags"
+              value={formData.metadata.tags.join(', ')}
+              onChange={(e) => {
+                const tags = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
+                setFormData(prev => ({
+                  ...prev,
+                  metadata: {
+                    ...prev.metadata,
+                    tags,
+                  },
+                }));
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>Project Sections</h2>
+          <ProjectSectionEditor
+            sections={formData.sections}
+            onChange={handleSectionsChange}
+          />
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="submit-button" disabled={loading}>
             {id ? 'Update Project' : 'Create Project'}
           </button>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="cancel-button"
             onClick={() => navigate('/admin/projects')}
           >
             Cancel
           </button>
         </div>
       </form>
-
-      {loading && <div className="admin-loading">Saving project...</div>}
-      {error && <div className="admin-error">{error}</div>}
     </div>
   );
-};
-
-export default AdminProjectForm; 
+}; 

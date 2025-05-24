@@ -32,18 +32,35 @@ export interface ProjectMetadata {
 }
 
 export interface Project {
-  id: number;
+  id: string;
   title: string;
   overview: string;
-  status: 'active' | 'draft' | 'completed' | 'archived';
+  status: 'draft' | 'published' | 'archived';
   created_at: string;
   updated_at: string;
   objectives: string[];
-  deliverables: Deliverable[];
+  deliverables: string[];
   considerations: string[];
-  techStack: TechStack;
-  metadata: ProjectMetadata;
-  sections: Record<string, ChallengeSection>;
+  metadata: {
+    type: string;
+    estimatedTime: string;
+    teamSize: {
+      min: number;
+      max: number;
+    };
+    difficulty: 'beginner' | 'intermediate' | 'advanced';
+    tags: string[];
+  };
+  sections: ProjectSection[];
+}
+
+export interface ProjectSection {
+  id: string;
+  title: string;
+  content: string; // Markdown content
+  order: number;
+  type: 'text' | 'code' | 'image' | 'link' | 'custom';
+  metadata?: Record<string, any>; // For any additional section-specific metadata
 }
 
 export interface WebsiteProject extends Project {

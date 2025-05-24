@@ -1,37 +1,53 @@
 import { useParams, Link } from 'react-router-dom';
-
-// Temporary mock data - this would come from an API in a real application
-const mockProject = {
-  id: 1,
-  title: 'AI-Powered Code Review',
-  description: 'Building an AI system to automate code review processes and improve code quality.',
-  status: 'Active',
-  tags: ['AI', 'Code Quality', 'Automation'],
-  objectives: [
-    'Develop an AI model to analyze code quality',
-    'Create an automated review system',
-    'Integrate with existing CI/CD pipelines',
-  ],
-  team: [
-    { name: 'John Doe', role: 'Lead Developer' },
-    { name: 'Jane Smith', role: 'AI Engineer' },
-    { name: 'Mike Johnson', role: 'DevOps Engineer' },
-  ],
-  timeline: '3-4 months',
-  technologies: ['Python', 'TensorFlow', 'Docker', 'Kubernetes'],
-};
+import { MDXEditor } from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
+import { useEffect, useState } from 'react';
+import { getProject } from '../api/projects';
+import type { Project } from '../api/projects';
+import './ProjectDetail.css';
 
 const ProjectDetail = () => {
   const { id } = useParams();
-  // In a real application, we would fetch the project data based on the ID
-  const project = mockProject;
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (!id) return;
+      try {
+        const data = await getProject(id);
+        setProject(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load project');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [id]);
+
+  if (loading) {
+    return <div className="project-detail container">Loading...</div>;
+  }
+
+  if (error || !project) {
+    return <div className="project-detail container">Error: {error || 'Project not found'}</div>;
+  }
 
   return (
     <div className="project-detail container">
       <div className="project-detail-header">
         <div className="project-detail-header-content">
           <h1 className="project-detail-title">{project.title}</h1>
-          <p className="project-detail-description">{project.description}</p>
+          <div className="project-detail-description markdown-content">
+            <MDXEditor
+              markdown={project.description}
+              readOnly={true}
+              contentEditableClassName="mdx-editor-readonly"
+            />
+          </div>
         </div>
         <Link to="/signup" className="btn btn-primary">
           Join Project
@@ -43,13 +59,13 @@ const ProjectDetail = () => {
         <div className="project-detail-grid">
           <div>
             <h3 className="project-detail-section-title">Objectives</h3>
-            <ul className="project-detail-list">
-              {project.objectives.map((objective, index) => (
-                <li key={index} className="project-detail-list-item">
-                  {objective}
-                </li>
-              ))}
-            </ul>
+            <div className="markdown-content">
+              <MDXEditor
+                markdown={project.objectives.join('\n\n')}
+                readOnly={true}
+                contentEditableClassName="mdx-editor-readonly"
+              />
+            </div>
           </div>
           <div>
             <h3 className="project-detail-section-title">Technologies</h3>
