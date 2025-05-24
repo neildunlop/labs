@@ -18,4 +18,13 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["ProjectsFunction"]
 
+[function_build_definitions.3c7951d3-6b75-456c-90c4-f49d7f26392d]
+codeuri = "F:\\Dev\\Labs\\burendo-labs\\backend\\src\\functions\\cognito-triggers"
+runtime = "nodejs18.x"
+architecture = "x86_64"
+handler = "post-confirmation.handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["PostConfirmationFunction"]
+
 [layer_build_definitions]

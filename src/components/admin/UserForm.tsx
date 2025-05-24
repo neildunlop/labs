@@ -24,12 +24,12 @@ export const UserForm: React.FC<UserFormProps> = ({ mode }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const theme = useTheme();
-  const [loading, setLoading] = useState(mode === 'edit');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
-    severity: 'success',
+    severity: 'success' as 'success' | 'error',
   });
 
   const [formData, setFormData] = useState<Partial<User>>({
@@ -50,9 +50,10 @@ export const UserForm: React.FC<UserFormProps> = ({ mode }) => {
   }, [mode, id]);
 
   const fetchUser = async () => {
+    if (!id) return;
     try {
       setLoading(true);
-      const user = await usersService.getUser(Number(id));
+      const user = await usersService.getUser(id);
       setFormData(user);
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -97,7 +98,7 @@ export const UserForm: React.FC<UserFormProps> = ({ mode }) => {
           severity: 'success',
         });
       } else if (mode === 'edit' && id) {
-        await usersService.updateUser(Number(id), formData);
+        await usersService.updateUser(id, formData);
         setSnackbar({
           open: true,
           message: 'User updated successfully',
@@ -241,19 +242,20 @@ export const UserForm: React.FC<UserFormProps> = ({ mode }) => {
             </Typography>
           )}
 
-          <Box sx={{ mt: theme.spacing(3), display: 'flex', gap: theme.spacing(2), justifyContent: 'flex-end' }}>
+          <Box sx={{ mt: theme.spacing(3), display: 'flex', gap: theme.spacing(2) }}>
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
+              disabled={loading}
+            >
+              {mode === 'create' ? 'Create User' : 'Update User'}
+            </Button>
             <Button
               variant="outlined"
               onClick={() => navigate('/admin/users')}
             >
               Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-            >
-              {mode === 'create' ? 'Create User' : 'Save Changes'}
             </Button>
           </Box>
         </form>
@@ -263,10 +265,9 @@ export const UserForm: React.FC<UserFormProps> = ({ mode }) => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleSnackbarClose} 
+        <Alert
+          onClose={handleSnackbarClose}
           severity={snackbar.severity}
           sx={{ width: '100%' }}
         >

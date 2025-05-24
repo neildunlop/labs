@@ -69,6 +69,44 @@ Resources:
       SupportedIdentityProviders:
         - COGNITO
 
+  # Cognito Post Confirmation Trigger
+  PostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/functions/cognito-triggers/
+      Handler: post-confirmation.handler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UsersTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminUpdateUserAttributes
+                - cognito-idp:UpdateUserPool
+              Resource: !GetAtt UserPool.Arn
+
+  # Add permission for Cognito to invoke the function
+  PostConfirmationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PostConfirmationFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  # Custom Resource to update User Pool
+  UpdateUserPoolTrigger:
+    Type: Custom::UpdateUserPoolTrigger
+    DependsOn: PostConfirmationPermission
+    Properties:
+      ServiceToken: !GetAtt PostConfirmationFunction.Arn
+      UserPoolId: !Ref UserPool
+      LambdaConfig:
+        PostConfirmation: !GetAtt PostConfirmationFunction.Arn
+
   # DynamoDB Tables
   UsersTable:
     Type: AWS::DynamoDB::Table

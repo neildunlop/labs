@@ -11,7 +11,7 @@ export const usersService = {
     return response.json();
   },
 
-  async getUser(id: number): Promise<User> {
+  async getUser(id: string): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/users/${id}`);
     if (!response.ok) {
       throw new Error('Failed to fetch user');
@@ -33,9 +33,9 @@ export const usersService = {
     return response.json();
   },
 
-  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+  async updateUser(id: string, userData: Partial<User>): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -47,7 +47,7 @@ export const usersService = {
     return response.json();
   },
 
-  async deleteUser(id: number): Promise<void> {
+  async deleteUser(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/users/${id}`, {
       method: 'DELETE',
     });
